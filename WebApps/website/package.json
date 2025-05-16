@@ -1,0 +1,40 @@
+{
+  "name": "website",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-svg-core": "^6.7.2",
+    "@fortawesome/free-brands-svg-icons": "^6.7.2",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@fortawesome/react-fontawesome": "^0.2.2",
+    "@headlessui/react": "^2.2.2",
+    "framer-motion": "^12.9.4",
+    "jose": "^6.0.11",
+    "js-cookie": "^3.0.5",
+    "next": "15.3.1",
+    "next-useragent": "^2.8.0",
+    "ol": "^10.5.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-player": "^2.16.0",
+    "react-responsive": "^10.0.1",
+    "sweetalert2": "^11.21.0",
+    "sweetalert2-react-content": "^5.1.0",
+    "swiper": "^11.2.6",
+    "vazirmatn": "^33.0.3",
+    "yup": "^1.6.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "eslint": "^9",
+    "eslint-config-next": "15.3.1",
+    "tailwindcss": "^4"
+  }
+}

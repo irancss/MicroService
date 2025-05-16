@@ -1,0 +1,54 @@
+﻿using AutoMapper;
+using ProductApi.Models.Dtos;
+using ProductApi.Models.Entities;
+
+namespace ProductApi.Infrastructure.Mapping
+{
+    public class MappingProfile : Profile
+    {
+        public MappingProfile()
+        {
+            // --- Product Mappings ---
+            // CreateRequest -> Product Entity
+            CreateMap<CreateProductRequest, Product>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore()) // Id توسط MongoDB تولید می‌شود
+                .ForMember(dest => dest.AverageRating, opt => opt.Ignore()) // محاسبه می‌شود
+                .ForMember(dest => dest.ReviewCount, opt => opt.Ignore())  // محاسبه می‌شود
+                .ForMember(dest => dest.Media, opt => opt.Ignore()) // مدیا جداگانه اضافه می‌شود
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
+
+
+            // UpdateRequest -> Product Entity (برای آپدیت روی Entity موجود)
+            CreateMap<UpdateProductRequest, Product>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore()) // Id نباید تغییر کند
+                .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
+                .ForMember(dest => dest.ReviewCount, opt => opt.Ignore())
+                .ForMember(dest => dest.Media, opt => opt.Ignore()) // مدیا جداگانه مدیریت می‌شود
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore());
+
+
+            // Product Entity -> ProductDto
+            CreateMap<Product, ProductDto>()
+                // .ForMember(dest => dest.Media, opt => opt.Ignore()) // Media توسط MediaService مپ می‌شود
+                .ForMember(dest => dest.DiscountedPrice, opt => opt.Ignore()); // Discount توسط سرویس محاسبه می‌شود
+
+
+            // MediaInfo Entity -> MediaInfoDto
+            CreateMap<MediaInfo, MediaInfoDto>()
+               .ForMember(dest => dest.Url, opt => opt.Ignore()); // URL توسط MediaService ساخته می‌شود
+
+
+            // --- Review Mappings ---
+            CreateMap<CreateReviewRequest, Review>()
+                .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.IsApproved, opt => opt.UseValue(false)) // نظرات جدید نیاز به تایید دارند
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore());
+
+            CreateMap<Review, ReviewDto>();
+
+            // --- QnA Mappings --- (مشابه Review)
+            // ...
+        }
+    }

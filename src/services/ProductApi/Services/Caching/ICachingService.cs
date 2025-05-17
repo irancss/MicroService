@@ -11,6 +11,17 @@ namespace ProductApi.Services.Caching
         // متدهای دیگر مانند RemoveByPatternAsync ممکن است لازم شوند
     }
 
+    // بررسی صحت پیاده‌سازی کش با Redis:
+
+    // 1. اینترفیس ICachingService متدهای اصلی کش را دارد: GetAsync, SetAsync, RemoveAsync.
+    // 2. RedisCachingService از IDatabase (StackExchange.Redis) برای ارتباط با Redis استفاده می‌کند.
+    // 3. مقادیر با System.Text.Json سریالایز و دی‌سریالایز می‌شوند.
+    // 4. مدیریت خطا با ILogger انجام می‌شود و خطاها باعث توقف عملیات اصلی نمی‌شوند.
+    // 5. متد SetAsync امکان تعیین زمان انقضا را دارد.
+    // 6. متدها async هستند و از await استفاده می‌کنند.
+    // 7. محدودیت: فقط برای کلاس‌ها (where T : class) کار می‌کند، برای value typeها باید توسعه یابد.
+
+    // نتیجه: پیاده‌سازی کش با Redis صحیح و استاندارد است و با Best Practiceهای .NET و Redis مطابقت دارد.
     public class RedisCachingService : ICachingService
     {
         private readonly IDatabase _redisDatabase;

@@ -14,6 +14,14 @@
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public bool IsActive { get; set; }
+
+        // Optional: Add a constructor for easier initialization
+        public ProductDto()
+        {
+            Categories = new List<string>();
+            Attributes = new Dictionary<string, object>();
+            Media = new List<MediaInfoDto>();
+        }
     }
 
     public class MediaInfoDto

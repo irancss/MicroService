@@ -10,23 +10,44 @@ public class Review
     [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; }
 
-    [BsonRepresentation(BsonType.ObjectId)] // یا اگر از Product.Id استفاده می‌کنید، نوع آن را ObjectId بگذارید
+    [BsonRepresentation(BsonType.ObjectId)]
     [BsonElement("productId")]
-    public string ProductId { get; set; } // شناسه محصول مرتبط
+    public string ProductId { get; set; }
 
     [BsonElement("userId")]
-    public string UserId { get; set; } // شناسه کاربر نظر دهنده
+    public string UserId { get; set; }
 
     [BsonElement("rating")]
-    public int Rating { get; set; } // امتیاز (مثلا 1 تا 5)
+    public int Rating { get; set; }
 
     [BsonElement("comment")]
     public string Comment { get; set; }
 
     [BsonElement("isApproved")]
-    public bool IsApproved { get; set; } = false; // نیاز به تایید مدیر
+    public bool IsApproved { get; set; } = false;
 
     [BsonElement("createdAt")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    [BsonRepresentation(BsonType.DateTime)]
+    public DateTime? UpdatedAt { get; set; }
+
+    [BsonElement("adminReply")]
+    public string? AdminReply { get; set; }
+
+    public void Approve(string? adminReply = null)
+    {
+        IsApproved = true;
+        AdminReply = adminReply;
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void UpdateRating(int rating, string comment)
+    {
+        Rating = rating;
+        Comment = comment;
+        UpdatedAt = DateTime.UtcNow;
+    }
 }

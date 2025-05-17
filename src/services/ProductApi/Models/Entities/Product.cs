@@ -6,12 +6,12 @@ namespace ProductApi.Models.Entities;
 [BsonIgnoreExtraElements]
 public class Product
 {
-    [BsonId] // شناسه اصلی سند در MongoDB
-    [BsonRepresentation(BsonType.ObjectId)] // نوع ObjectId برای شناسه
+    [BsonId]
+    [BsonRepresentation(BsonType.ObjectId)]
     public string Id { get; set; }
 
-    [BsonElement("sku")] // نام فیلد در MongoDB (اختیاری، پیش‌فرض نام پراپرتی است)
-    public string Sku { get; set; } // شناسه یکتای محصول (Stock Keeping Unit)
+    [BsonElement("sku")]
+    public string Sku { get; set; }
 
     [BsonElement("name")]
     public string Name { get; set; }
@@ -20,26 +20,23 @@ public class Product
     public string Description { get; set; }
 
     [BsonElement("categories")]
-    public List<string> Categories { get; set; } = new List<string>(); // لیست شناسه‌ها یا نام‌های دسته‌بندی
+    public List<string> Categories { get; set; } = new List<string>();
 
     [BsonElement("price")]
-    [BsonRepresentation(BsonType.Decimal128)] // دقت بالا برای قیمت
+    [BsonRepresentation(BsonType.Decimal128)]
     public decimal Price { get; set; }
 
-    // برای ویژگی‌های متغیر و پویا، Dictionary یا BsonDocument مناسب است
     [BsonElement("attributes")]
     public Dictionary<string, object> Attributes { get; set; } = new Dictionary<string, object>();
-    // مثال: { "Color": "Red", "Size": "XL", "Material": "Cotton" }
 
     [BsonElement("media")]
     public List<MediaInfo> Media { get; set; } = new List<MediaInfo>();
 
-
     [BsonElement("averageRating")]
-    public double AverageRating { get; set; } // محاسبه شده بر اساس نظرات
+    public double AverageRating { get; set; }
 
     [BsonElement("reviewCount")]
-    public int ReviewCount { get; set; } // تعداد نظرات تایید شده
+    public int ReviewCount { get; set; }
 
     [BsonElement("isActive")]
     public bool IsActive { get; set; } = true;
@@ -51,4 +48,33 @@ public class Product
     [BsonElement("updatedAt")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // New fields for completeness
+
+    [BsonElement("stockQuantity")]
+    public int StockQuantity { get; set; } = 0; // موجودی انبار
+
+    [BsonElement("brand")]
+    public string Brand { get; set; } // برند محصول
+
+    [BsonElement("tags")]
+    public List<string> Tags { get; set; } = new List<string>(); // برچسب‌ها
+
+    [BsonElement("weight")]
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal? Weight { get; set; } // وزن محصول (اختیاری)
+
+    [BsonElement("dimensions")]
+    public ProductDimensions Dimensions { get; set; } // ابعاد محصول (اختیاری)
+
+    [BsonElement("vendorId")]
+    [BsonRepresentation(BsonType.ObjectId)]
+    public string VendorId { get; set; } // شناسه فروشنده
+
+    [BsonElement("isDeleted")]
+    public bool IsDeleted { get; set; } = false; // حذف منطقی
+    [BsonElement("scheduledDiscounts")]
+    public List<ScheduledDiscount> ScheduledDiscounts { get; set; } = new List<ScheduledDiscount>();
+
+
 }

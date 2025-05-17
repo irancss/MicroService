@@ -28,15 +28,9 @@ namespace ProductApi.Controllers
         /// <summary>
         /// Retrieves a paginated list of products based on optional filters.
         /// </summary>
-        /// <param name="page">Page number (default: 1).</param>
-        /// <param name="pageSize">Number of items per page (default: 10, max: 50).</param>
-        /// <param name="category">Filter by category name (optional).</param>
-        /// <param name="minPrice">Filter by minimum price (optional).</param>
-        /// <param name="maxPrice">Filter by maximum price (optional).</param>
-        /// <returns>A paginated list of products.</returns>
-        /// <response code="200">Returns the paginated list of products.</response>
         [HttpGet]
         [ProducesResponseType(typeof(PagedResult<ProductDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<PagedResult<ProductDto>>> GetProducts(
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 10,
@@ -44,8 +38,14 @@ namespace ProductApi.Controllers
             [FromQuery] decimal? minPrice = null,
             [FromQuery] decimal? maxPrice = null)
         {
-            // محدود کردن pageSize برای جلوگیری از درخواست‌های سنگین
-            pageSize = Math.Min(pageSize, 50); // حداکثر 50 آیتم در هر صفحه
+            if (page < 1) return BadRequest("Page must be greater than 0.");
+            if (pageSize < 1) return BadRequest("PageSize must be greater than 0.");
+            if (minPrice.HasValue && minPrice < 0) return BadRequest("minPrice cannot be negative.");
+            if (maxPrice.HasValue && maxPrice < 0) return BadRequest("maxPrice cannot be negative.");
+            if (minPrice.HasValue && maxPrice.HasValue && minPrice > maxPrice)
+                return BadRequest("minPrice cannot be greater than maxPrice.");
+
+            pageSize = Math.Min(pageSize, 50);
             var result = await _productService.GetProductsAsync(page, pageSize, category, minPrice, maxPrice);
             return Ok(result);
         }
@@ -53,15 +53,14 @@ namespace ProductApi.Controllers
         /// <summary>
         /// Retrieves a specific product by its unique ID.
         /// </summary>
-        /// <param name="id">The unique identifier of the product (MongoDB ObjectId).</param>
-        /// <returns>The requested product.</returns>
-        /// <response code="200">Returns the product.</response>
-        /// <response code="404">If the product with the specified ID is not found.</response>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ProductDto>> GetProductById(string id)
         {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Product ID is required.");
             var product = await _productService.GetProductByIdAsync(id);
             if (product == null)
             {
@@ -71,19 +70,17 @@ namespace ProductApi.Controllers
             return Ok(product);
         }
 
-
         /// <summary>
         /// Retrieves a specific product by its unique Sku.
         /// </summary>
-        /// <param name="id">The unique identifier of the product (MongoDB ObjectId).</param>
-        /// <returns>The requested product.</returns>
-        /// <response code="200">Returns the product.</response>
-        /// <response code="404">If the product with the specified ID is not found.</response>
         [HttpGet("sku/{sku}")]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<ActionResult<ProductDto>> GetProductBySku(string sku)
         {
+            if (string.IsNullOrWhiteSpace(sku))
+                return BadRequest("SKU is required.");
             var product = await _productService.GetProductBySkuAsync(sku);
             if (product == null)
             {
@@ -93,42 +90,33 @@ namespace ProductApi.Controllers
             return Ok(product);
         }
 
-
         /// <summary>
         /// Creates a new product. Requires Admin role.
         /// </summary>
-        /// <param name="request">The details of the product to create.</param>
-        /// <returns>The newly created product.</returns>
-        /// <response code="201">Returns the newly created product.</response>
-        /// <response code="400">If the request data is invalid (e.g., validation error, duplicate SKU).</response>
-        /// <response code="401">If the user is not authenticated.</response>
-        /// <response code="403">If the user does not have the required Admin role.</response>
         [HttpPost]
-        [Authorize(Roles = "Admin")] // نیازمند نقش Admin
+        [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ProductDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<ActionResult<ProductDto>> CreateProduct([FromBody] CreateProductRequest request)
         {
-            // ModelState.IsValid به طور خودکار توسط [ApiController] بررسی می‌شود
+            if (request == null)
+                return BadRequest("Request body is required.");
             try
             {
                 var createdProduct = await _productService.CreateProductAsync(request);
-                // بازگرداندن 201 Created به همراه آدرس محصول جدید و خود محصول
                 return CreatedAtAction(nameof(GetProductById), new { id = createdProduct.Id }, createdProduct);
             }
-            catch (ArgumentException ex) // خطای مربوط به SKU تکراری یا داده نامعتبر
+            catch (ArgumentException ex)
             {
-                _logger.LogWarning(ex, "Bad request during product creation for SKU: {Sku}", request.Sku);
-                // بازگرداندن جزئیات خطا به کلاینت (اختیاری)
+                _logger.LogWarning(ex, "Bad request during product creation for SKU: {Sku}", request?.Sku);
                 ModelState.AddModelError("CreateProduct", ex.Message);
-                return ValidationProblem(ModelState); // 400 Bad Request با جزئیات خطا
-                // یا return BadRequest(ex.Message);
+                return ValidationProblem(ModelState);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error creating product with SKU: {Sku}", request.Sku);
+                _logger.LogError(ex, "Error creating product with SKU: {Sku}", request?.Sku);
                 return StatusCode(StatusCodes.Status500InternalServerError, "An unexpected error occurred.");
             }
         }
@@ -136,14 +124,6 @@ namespace ProductApi.Controllers
         /// <summary>
         /// Updates an existing product. Requires Admin role.
         /// </summary>
-        /// <param name="id">The ID of the product to update.</param>
-        /// <param name="request">The updated product details.</param>
-        /// <returns>No content if successful.</returns>
-        /// <response code="204">Indicates successful update.</response>
-        /// <response code="400">If the request data is invalid.</response>
-        /// <response code="401">If the user is not authenticated.</response>
-        /// <response code="403">If the user does not have the required Admin role.</response>
-        /// <response code="404">If the product with the specified ID is not found.</response>
         [HttpPut("{id}")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
@@ -153,22 +133,24 @@ namespace ProductApi.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> UpdateProduct(string id, [FromBody] UpdateProductRequest request)
         {
-            // UpdateProductRequest شبیه Create است اما برخی فیلدها ممکن است Required نباشند
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Product ID is required.");
+            if (request == null)
+                return BadRequest("Request body is required.");
             try
             {
                 var success = await _productService.UpdateProductAsync(id, request);
                 if (!success)
                 {
-                    // دلیل عدم موفقیت می‌تواند NotFound یا خطای دیگری باشد که در سرویس لاگ شده
                     return NotFound($"Product with ID '{id}' not found for update.");
                 }
-                return NoContent(); // 204 No Content
+                return NoContent();
             }
-            catch (ArgumentException ex) // خطای مربوط به SKU تکراری یا داده نامعتبر
+            catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Bad request during product update for ID: {ProductId}", id);
                 ModelState.AddModelError("UpdateProduct", ex.Message);
-                return ValidationProblem(ModelState); // 400 Bad Request با جزئیات خطا
+                return ValidationProblem(ModelState);
             }
             catch (Exception ex)
             {
@@ -180,21 +162,18 @@ namespace ProductApi.Controllers
         /// <summary>
         /// Deletes a product (soft delete). Requires Admin role.
         /// </summary>
-        /// <param name="id">The ID of the product to delete.</param>
-        /// <returns>No content if successful.</returns>
-        /// <response code="204">Indicates successful deletion.</response>
-        /// <response code="401">If the user is not authenticated.</response>
-        /// <response code="403">If the user does not have the required Admin role.</response>
-        /// <response code="404">If the product with the specified ID is not found.</response>
         [HttpDelete("{id}")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeleteProduct(string id)
         {
-            var success = await _productService.DeleteProductAsync(id); // Soft delete
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest("Product ID is required.");
+            var success = await _productService.DeleteProductAsync(id);
             if (!success)
             {
                 return NotFound($"Product with ID '{id}' not found for deletion.");
@@ -204,21 +183,23 @@ namespace ProductApi.Controllers
 
         // --- Endpoints for Media ---
 
-        // POST /api/products/{productId}/media/upload-url?fileName=image.jpg&contentType=image/jpeg
         [HttpPost("{productId}/media/upload-url")]
-        // [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(PresignedUrlResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<PresignedUrlResponse>> GetMediaUploadUrl(string productId, [FromQuery, Required] string fileName, [FromQuery, Required] string contentType)
         {
+            if (string.IsNullOrWhiteSpace(productId))
+                return BadRequest("Product ID is required.");
             if (string.IsNullOrWhiteSpace(fileName) || string.IsNullOrWhiteSpace(contentType))
             {
                 return BadRequest("fileName and contentType are required.");
             }
 
-            // بررسی وجود محصول (اختیاری، اما خوب است)
-            // var productExists = await _productService.GetProductByIdAsync(productId) != null;
-            // if(!productExists) return NotFound($"Product with ID '{productId}' not found.");
+            // Optional: check if product exists
+            var product = await _productService.GetProductByIdAsync(productId);
+            if (product == null)
+                return NotFound($"Product with ID '{productId}' not found.");
 
             try
             {
@@ -232,22 +213,26 @@ namespace ProductApi.Controllers
             }
         }
 
-        // POST /api/products/{productId}/media/confirm
         [HttpPost("{productId}/media/confirm")]
-        // [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ConfirmMediaUpload(string productId, [FromBody] MediaUploadConfirmationRequest request)
         {
-            // MediaUploadConfirmationRequest : { string S3Key, string MediaType, string AltText, int Order }
+            if (string.IsNullOrWhiteSpace(productId))
+                return BadRequest("Product ID is required.");
             if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            // Optional: check if product exists
+            var product = await _productService.GetProductByIdAsync(productId);
+            if (product == null)
+                return NotFound($"Product with ID '{productId}' not found.");
 
             try
             {
                 var success = await _mediaService.ConfirmMediaUploadAsync(productId, request.S3Key, request.MediaType, request.AltText, request.Order);
                 if (!success)
                 {
-                    // دلیل عدم موفقیت لاگ شده است (مثلا عدم یافتن محصول یا خطا در ذخیره)
                     return BadRequest("Failed to confirm upload and update product media.");
                 }
                 return NoContent();
@@ -261,19 +246,21 @@ namespace ProductApi.Controllers
         public class MediaUploadConfirmationRequest
         {
             [Required] public string S3Key { get; set; }
-            [Required] public string MediaType { get; set; } // "Image", "Video"
+            [Required] public string MediaType { get; set; }
             public string? AltText { get; set; }
             public int Order { get; set; } = 0;
         }
 
-
-        // DELETE /api/products/{productId}/media/{mediaId}
         [HttpDelete("{productId}/media/{mediaId}")]
-        // [Authorize(Roles = "Admin")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> DeleteMedia(string productId, string mediaId)
         {
+            if (string.IsNullOrWhiteSpace(productId))
+                return BadRequest("Product ID is required.");
+            if (string.IsNullOrWhiteSpace(mediaId))
+                return BadRequest("Media ID is required.");
             try
             {
                 var success = await _mediaService.DeleteMediaAsync(productId, mediaId);

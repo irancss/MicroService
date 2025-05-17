@@ -24,9 +24,36 @@ public class Question
     public List<Answer> Answers { get; set; } = new List<Answer>();
 
     [BsonElement("isAnswered")]
-    public bool IsAnswered => Answers.Any(); // فیلد محاسبه شده (ممکن است در MongoDB ذخیره نشود)
+    public bool IsAnswered => Answers != null && Answers.Any(); // فیلد محاسبه شده (ممکن است در MongoDB ذخیره نشود)
 
     [BsonElement("createdAt")]
     [BsonRepresentation(BsonType.DateTime)]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [BsonElement("updatedAt")]
+    [BsonRepresentation(BsonType.DateTime)]
+    public DateTime? UpdatedAt { get; set; }
+
+    [BsonElement("isActive")]
+    public bool IsActive { get; set; } = true;
+
+    public void AddAnswer(Answer answer)
+    {
+        if (Answers == null)
+            Answers = new List<Answer>();
+        Answers.Add(answer);
+        UpdatedAt = DateTime.UtcNow;
+    }
+
+    public void RemoveAnswer(string answerId)
+    {
+        if (Answers == null)
+            return;
+        var answer = Answers.FirstOrDefault(a => a.Id == answerId);
+        if (answer != null)
+        {
+            Answers.Remove(answer);
+            UpdatedAt = DateTime.UtcNow;
+        }
+    }
 }

@@ -5,18 +5,57 @@ namespace CartApi.Models
 {
     public class Cart
     {
-        // کلید اصلی در Redis همان UserId خواهد بود
-        [JsonIgnore] // UserId بخشی از کلید است، نه خود داده JSON در Redis
+        // Redis key is the UserId
+        [JsonIgnore] // UserId is part of the key, not the JSON data in Redis
         public string UserId { get; private set; }
-        public List<CartItem> Items { get; set; } = new List<CartItem>();
+
+        public List<CartItem> Items { get; private set; } = new List<CartItem>();
+
         public decimal TotalPrice => Items.Sum(item => item.UnitPrice * item.Quantity);
-        public decimal DiscountAmount { get; set; } = 0; // مبلغ تخفیف اعمال شده
-        public string AppliedDiscountCode { get; set; } // کد تخفیف اعمال شده
-        public decimal FinalPrice => TotalPrice - DiscountAmount; // قیمت نهایی
+
+        public decimal DiscountAmount { get; private set; } = 0;
+
+        public string? AppliedDiscountCode { get; private set; }
+
+        public decimal FinalPrice => Math.Max(0, TotalPrice - DiscountAmount);
 
         public Cart(string userId)
         {
             UserId = userId;
+        }
+
+        public void AddItem(CartItem item)
+        {
+            var existing = Items.FirstOrDefault(i => i.ProductId == item.ProductId);
+            if (existing != null)
+            {
+                existing.Quantity += item.Quantity;
+            }
+            else
+            {
+                Items.Add(item);
+            }
+        }
+
+        public void RemoveItem(string productId)
+        {
+            var item = Items.FirstOrDefault(i => i.ProductId == productId);
+            if (item != null)
+            {
+                Items.Remove(item);
+            }
+        }
+
+        public void ApplyDiscount(string discountCode, decimal discountAmount)
+        {
+            AppliedDiscountCode = discountCode;
+            DiscountAmount = Math.Min(discountAmount, TotalPrice);
+        }
+
+        public void ClearDiscount()
+        {
+            AppliedDiscountCode = null;
+            DiscountAmount = 0;
         }
     }
 

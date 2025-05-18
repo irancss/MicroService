@@ -1,4 +1,4 @@
-﻿namespace OrderApi.Enums
+﻿namespace OrderService.Core.Enums
 {
     public enum OrderStatus
     {

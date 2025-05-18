@@ -15,4 +15,8 @@
     <Folder Include="Queries\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\OrderService.Core\OrderService.Core.csproj" />
+  </ItemGroup>
+
 </Project>

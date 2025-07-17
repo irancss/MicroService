@@ -1,0 +1,127 @@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Home";
+}
+
+<div class="hero-section">
+    <div class="container text-center">
+        <h1 class="display-4 fw-bold mb-4">IdentityServer8 Microservice</h1>
+        <p class="lead mb-4">Secure OpenID Connect and OAuth 2.0 Framework for ASP.NET Core</p>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <div class="badge bg-light text-dark p-3 rounded">
+                    <strong>OpenID Connect</strong>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="badge bg-light text-dark p-3 rounded">
+                    <strong>OAuth 2.0</strong>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3">
+                <div class="badge bg-light text-dark p-3 rounded">
+                    <strong>JWT Tokens</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container my-5">
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">🔐</div>
+                    <h5 class="card-title">Secure Authentication</h5>
+                    <p class="card-text">Comprehensive authentication and authorization services for your microservice architecture.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">🌐</div>
+                    <h5 class="card-title">Multi-Client Support</h5>
+                    <p class="card-text">Support for web applications, mobile apps, SPAs, and machine-to-machine communication.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <div class="feature-icon mb-3">⚡</div>
+                    <h5 class="card-title">High Performance</h5>
+                    <p class="card-text">Built on .NET 8 for optimal performance and scalability in production environments.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-lg-6">
+            <h3>Endpoints</h3>
+            <div class="list-group">
+                <a href="/.well-known/openid_configuration" class="list-group-item list-group-item-action">
+                    <strong>Discovery Document</strong>
+                    <small class="d-block text-muted">/.well-known/openid_configuration</small>
+                </a>
+                <a href="/connect/token" class="list-group-item list-group-item-action">
+                    <strong>Token Endpoint</strong>
+                    <small class="d-block text-muted">/connect/token</small>
+                </a>
+                <a href="/connect/authorize" class="list-group-item list-group-item-action">
+                    <strong>Authorize Endpoint</strong>
+                    <small class="d-block text-muted">/connect/authorize</small>
+                </a>
+                <a href="/connect/userinfo" class="list-group-item list-group-item-action">
+                    <strong>UserInfo Endpoint</strong>
+                    <small class="d-block text-muted">/connect/userinfo</small>
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <h3>Test Users</h3>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Password</th>
+                            <th>Role</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>admin</td>
+                            <td>admin123</td>
+                            <td>Administrator</td>
+                        </tr>
+                        <tr>
+                            <td>manager</td>
+                            <td>manager123</td>
+                            <td>Manager</td>
+                        </tr>
+                        <tr>
+                            <td>user</td>
+                            <td>user123</td>
+                            <td>User</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h5>🚀 Getting Started</h5>
+                <p class="mb-0">
+                    This IdentityServer8 instance is configured with test users and sample clients. 
+                    For production use, replace test users with a real user store and configure proper signing certificates.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>

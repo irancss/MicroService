@@ -17,7 +17,7 @@ import {
   faComment,
   faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 library.add(
   faHome,
   faShoppingCart,

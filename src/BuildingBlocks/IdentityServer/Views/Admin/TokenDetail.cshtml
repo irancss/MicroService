@@ -1,0 +1,172 @@
+@model TokenDetailViewModel
+@{
+    ViewData["Title"] = "جزئیات توکن";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>جزئیات توکن</h2>
+    <div>
+        <a href="/admin/tokens" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i> بازگشت به لیست
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">اطلاعات کلی توکن</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-sm-4"><strong>کاربر (Subject):</strong></div>
+                    <div class="col-sm-8">@Model.Subject</div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4"><strong>Client ID:</strong></div>
+                    <div class="col-sm-8">@Model.ClientId</div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4"><strong>نوع توکن:</strong></div>
+                    <div class="col-sm-8">@Model.Type</div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4"><strong>تاریخ ایجاد:</strong></div>
+                    <div class="col-sm-8">@Model.CreationTime.ToString("yyyy/MM/dd HH:mm:ss")</div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4"><strong>تاریخ انقضا:</strong></div>
+                    <div class="col-sm-8">
+                        @if (Model.ExpirationTime.HasValue)
+                        {
+                            @Model.ExpirationTime.Value.ToString("yyyy/MM/dd HH:mm:ss")
+                        }
+                        else
+                        {
+                            <span class="text-muted">بدون انقضا</span>
+                        }
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-4"><strong>وضعیت:</strong></div>
+                    <div class="col-sm-8">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge badge-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-danger">غیرفعال</span>
+                        }
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.SessionId))
+                {
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4"><strong>Session ID:</strong></div>
+                        <div class="col-sm-8"><code>@Model.SessionId</code></div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">عملیات</h5>
+            </div>
+            <div class="card-body">
+                @if (Model.IsActive)
+                {
+                    <button class="btn btn-danger btn-block mb-2" onclick="revokeUserTokens('@Model.Subject')">
+                        <i class="fas fa-ban"></i> لغو تمام توکن‌های کاربر
+                    </button>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        این توکن غیرفعال است
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.Claims.Any())
+{
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Claims</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var claim in Model.Claims)
+                        {
+                            <tr>
+                                <td><code>@claim.Key</code></td>
+                                <td>@claim.Value</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(Model.RawToken))
+{
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0">Raw Token Data</h5>
+        </div>
+        <div class="card-body">
+            <pre class="bg-light p-3" style="font-size: 0.8em; max-height: 300px; overflow-y: auto;"><code>@Model.RawToken</code></pre>
+        </div>
+    </div>
+}
+
+<script>
+async function revokeUserTokens(userId) {
+    if (!confirm('آیا از لغو تمام توکن‌های این کاربر اطمینان دارید؟')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/tokens/revoke-user/${userId}`, {
+            method: 'POST',
+            headers: {
+                'RequestVerificationToken': document.querySelector('[name="__RequestVerificationToken"]').value
+            }
+        });
+        
+        const result = await response.json();
+        if (result.success) {
+            alert('توکن‌های کاربر با موفقیت لغو شد');
+            window.location.href = '/admin/tokens';
+        } else {
+            alert('خطا در لغو توکن‌ها: ' + (result.error || 'خطای نامشخص'));
+        }
+    } catch (error) {
+        alert('خطا در ارتباط با سرور');
+    }
+}
+</script>

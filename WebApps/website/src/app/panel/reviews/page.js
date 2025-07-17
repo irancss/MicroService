@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import Swal from "sweetalert2";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faStar } from "@fortawesome/free-solid-svg-icons";

@@ -6,9 +6,9 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { library } from "@fortawesome/fontawesome-svg-core";
-import OpenLayer from "@/app/components/Panel/Address/Map/OpenLayer";
+import OpenLayer from "@components/Panel/Address/Map/OpenLayer";
 import { faEdit, faHome, faTrash } from "@fortawesome/free-solid-svg-icons";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 library.add(faHome, faTrash, faEdit);
 
 const MySwal = withReactContent(Swal);

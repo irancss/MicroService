@@ -1,5 +1,5 @@
 "use client";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import React, { useState } from "react";
 import * as Yup from "yup";
 

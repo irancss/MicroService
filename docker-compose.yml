@@ -1,0 +1,6 @@
+services:
+  shippingservice.api:
+    image: ${DOCKER_REGISTRY-}shippingserviceapi
+    build:
+      context: .
+      dockerfile: src/services/Shipping/ShippingService.API/Dockerfile

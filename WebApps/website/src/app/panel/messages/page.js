@@ -1,7 +1,7 @@
 
 
 "use client";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import React, { useState } from "react";
 export default function MessagesPage() {
     const initialMessages = [

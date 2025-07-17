@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
  * @param {string} alt - متن جایگزین تصویر (الزامی)
  * @param {number} [width=1200] - عرض بنر (پیکسل)
  * @param {number} [height=400] - ارتفاع بنر (پیکسل)
- * @param {string} [className=""] - کلاس‌های سفارشی Tailwind
+ * @param {string} [] - کلاس‌های سفارشی Tailwind
  * @param {ReactNode} children - محتوای دلخواه روی بنر
  * @param {boolean} [overlay=false] - آیا لایه overlay تیره اضافه شود؟
  * @param {string} [position="center"] - موقعیت محتوا (`center`، `start`، `end`)

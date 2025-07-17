@@ -1,0 +1,9 @@
+global using IdentityModel;
+global using IdentityServer8;
+global using IdentityServer8.Models;
+global using IdentityServer8.Test;
+global using Microsoft.AspNetCore.Authentication;
+global using Microsoft.AspNetCore.Authorization;
+global using Microsoft.AspNetCore.Mvc;
+global using Serilog;
+global using System.Security.Claims;

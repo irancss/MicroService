@@ -1,0 +1,21 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build Cart Microservice",
+			"type": "shell",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"Cart.sln",
+				"--configuration",
+				"Release"
+			],
+			"group": "build",
+			"problemMatcher": [
+				"$tsc"
+			],
+			"isBackground": false
+		}
+	]
+}

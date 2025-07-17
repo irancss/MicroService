@@ -5,7 +5,10 @@ export default function Home() {
   return (
     <>
       hi
-      <Prefooter />
+     <footer>
+           <MainFooter />
+           <PostFooter />
+         </footer>
     </>
   );
 }

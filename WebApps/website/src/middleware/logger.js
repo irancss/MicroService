@@ -5,11 +5,9 @@ export function logger(request) {
   const method = request.method || 'GET';
   const timestamp = new Date().toISOString();
   
-  console.log(`[${timestamp}] [MIDDLEWARE] ${method} ${pathname}${search || ''}`);
   
   // You can add more logging details here as needed
   if (request.cookies) {
-    console.log(`[MIDDLEWARE] Cookies: ${JSON.stringify([...request.cookies.entries()])}`);
   }
   
   // If this is being used in middleware chain

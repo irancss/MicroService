@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import Link from "next/link";
 import Swal from "sweetalert2";
 

@@ -7,7 +7,7 @@ import PropTypes from 'prop-types';
  * @param {string} src - مسیر تصویر (الزامی)
  * @param {string} alt - متن جایگزین تصویر (الزامی)
  * @param {string} [ratio="16:9"] - نسبت ابعاد بنر (پیش‌فرض 16:9)
- * @param {string} [className=""] - کلاس‌های سفارشی Tailwind
+ * @param {string} [] - کلاس‌های سفارشی Tailwind
  * @param {ReactNode} children - محتوای دلخواه روی بنر
  * @param {boolean} [overlay=false] - لایه overlay تیره
  * @param {string} [contentPosition="center"] - موقعیت محتوا (center/start/end)

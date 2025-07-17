@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { footerData } from "@/data/siteData/footer";
+import { footerData } from "@data/siteData/footer/footer";
 import { motion } from "framer-motion";
 
 const sectionVariants = {

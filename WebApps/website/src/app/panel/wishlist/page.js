@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
-import ProductCart from "@/app/components/General/Product/Cart";
+import ProductCart from "@components/General/Product/Cart";
 import { useEffect, useState } from "react";
 
 export default function Wishlist() {

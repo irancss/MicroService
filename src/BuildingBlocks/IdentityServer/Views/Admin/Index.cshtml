@@ -1,0 +1,199 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "پنل مدیریت";
+    Layout = "_AdminLayout";
+}
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.TotalUsers</h4>
+                        <p class="mb-0">کل کاربران</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.ActiveUsers</h4>
+                        <p class="mb-0">کاربران فعال</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.VerifiedUsers</h4>
+                        <p class="mb-0">تایید شده</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shield-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@((Model.TotalUsers - Model.ActiveUsers))</h4>
+                        <p class="mb-0">غیرفعال</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-user-times fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.ActiveUsers</h4>
+                        <p class="mb-0">توکن‌های فعال</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-key fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-9">
+        <div class="card">
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <a href="/admin/users" class="btn btn-primary btn-lg btn-block">
+                            <i class="fas fa-users fa-2x d-block mb-2"></i>
+                            مدیریت کاربران
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/admin/tokens" class="btn btn-success btn-lg btn-block">
+                            <i class="fas fa-key fa-2x d-block mb-2"></i>
+                            مدیریت توکن‌ها
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/admin/logs" class="btn btn-info btn-lg btn-block">
+                            <i class="fas fa-file-alt fa-2x d-block mb-2"></i>
+                            گزارشات
+                        </a>
+                    </div>
+                    <div class="col-md-3">
+                        <a href="/admin/settings" class="btn btn-warning btn-lg btn-block">
+                            <i class="fas fa-cog fa-2x d-block mb-2"></i>
+                            تنظیمات
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">کاربران جدید</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>شماره موبایل</th>
+                                <th>نام</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ عضویت</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var user in Model.RecentUsers)
+                            {
+                                <tr>
+                                    <td>@user.PhoneNumber</td>
+                                    <td>@user.FullName</td>
+                                    <td>
+                                        @if (user.IsActive)
+                                        {
+                                            <span class="badge bg-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">غیرفعال</span>
+                                        }
+                                        
+                                        @if (user.IsMobileVerified)
+                                        {
+                                            <span class="badge bg-info">تایید شده</span>
+                                        }
+                                    </td>
+                                    <td>@user.CreatedAt.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (!Model.RecentUsers.Any())
+                {
+                    <p class="text-center text-muted">هیچ کاربری یافت نشد</p>
+                }
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">عملیات سریع</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="/admin/users" class="btn btn-primary">
+                        <i class="fas fa-users"></i> مدیریت کاربران
+                    </a>
+                    <a href="/admin/settings" class="btn btn-secondary">
+                        <i class="fas fa-cog"></i> تنظیمات
+                    </a>
+                    <a href="/admin/logs" class="btn btn-info">
+                        <i class="fas fa-file-alt"></i> لاگ ها
+                    </a>
+                    <a href="/.well-known/openid_configuration" class="btn btn-success" target="_blank">
+                        <i class="fas fa-code"></i> Discovery Document
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

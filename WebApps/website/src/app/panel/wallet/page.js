@@ -1,6 +1,6 @@
 // Wallet Page Component (Glassmorphism Style)
 "use client";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import { convertNumberRialToLetters } from "@/lib/convert-iranian-money";
 import { useState } from "react";
 import clsx from "clsx";

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { footerData } from "@/data/siteData/footer";
+import { footerData } from "@data/siteData/footer/footer";
 import OlHorizontal from "../General/Listing/Text/OlHorizontal";
 import IconGrid from "../General/Listing/FontAwesome/IconGrid";
 import Image from "next/image";
@@ -147,7 +147,7 @@ export default function PostFooter() {
                     ]}
                     direction="horizontal"
                     bgColor="transparent"
-                    className=""
+                    
                     size="md"
                   />
                 </div>

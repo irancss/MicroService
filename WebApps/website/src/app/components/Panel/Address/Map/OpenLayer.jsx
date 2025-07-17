@@ -61,7 +61,6 @@ export default function OpenLayer() {
 
   const handleSearch = () => {
     // Implement search logic here
-    console.log("جستجو:", searchValue);
   };
 
   const handleLocationClick = () => {

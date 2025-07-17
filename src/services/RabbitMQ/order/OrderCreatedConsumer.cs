@@ -1,11 +1,12 @@
-﻿using MassTransit;
-using Contracts;
-class OrderCreatedConsumer : IConsumer<OrderCreated>
+﻿using Contracts;
+using MassTransit;
+
+public class OrderCreatedConsumer : IConsumer<IOrderCreated>
 {
     public Task Consume(ConsumeContext<IOrderCreated> context)
     {
-        Console.WriteLine($"✅ Order Received: ID={context.Message.OrderId} at {context.Message.CreatedAt}");
-        // مثلاً برو موجودی کم کن، یا لاگ بزن، یا ایمیل بفرست و ...
+        Console.WriteLine($"Order received: {context.Message.OrderId}");
+        // انجام عملیات مورد نیاز مانند ارسال ایمیل یا به‌روزرسانی موجودی
         return Task.CompletedTask;
     }
 }

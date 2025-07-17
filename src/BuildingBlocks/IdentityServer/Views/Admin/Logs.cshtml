@@ -1,0 +1,151 @@
+@{
+    ViewData["Title"] = "لاگ سیستم";
+    Layout = "_AdminLayout";
+}
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">لاگ سیستم</h5>
+        <div>
+            <button class="btn btn-sm btn-outline-primary" onclick="refreshLogs()">
+                <i class="fas fa-sync-alt"></i> بروزرسانی
+            </button>
+            <button class="btn btn-sm btn-outline-secondary" onclick="clearLogs()">
+                <i class="fas fa-trash"></i> پاک کردن
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="mb-3">
+            <div class="row">
+                <div class="col-md-3">
+                    <select class="form-select" id="logLevel">
+                        <option value="">همه سطوح</option>
+                        <option value="Debug">Debug</option>
+                        <option value="Information">Information</option>
+                        <option value="Warning">Warning</option>
+                        <option value="Error">Error</option>
+                        <option value="Fatal">Fatal</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <input type="text" class="form-control" id="searchLogs" placeholder="جستجو در لاگ‌ها...">
+                </div>
+                <div class="col-md-3">
+                    <input type="date" class="form-control" id="logDate">
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" onclick="filterLogs()">فیلتر</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="logs-container" style="max-height: 600px; overflow-y: auto; background-color: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 5px; font-family: 'Courier New', monospace; font-size: 12px;">
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:00:00]</span> 
+                <span class="text-success">[Information]</span> 
+                <span class="text-warning">IdentityServer8</span>: 
+                Starting IdentityServer host...
+            </div>
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:00:01]</span> 
+                <span class="text-success">[Information]</span> 
+                <span class="text-warning">IdentityServer8</span>: 
+                Database migration completed successfully
+            </div>
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:00:02]</span> 
+                <span class="text-success">[Information]</span> 
+                <span class="text-warning">AuthController</span>: 
+                کد تایید برای شماره 09123456789 ارسال شد
+            </div>
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:00:05]</span> 
+                <span class="text-success">[Information]</span> 
+                <span class="text-warning">AuthController</span>: 
+                کاربر 09123456789 با موفقیت وارد شد
+            </div>
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:01:00]</span> 
+                <span class="text-warning">[Warning]</span> 
+                <span class="text-warning">Microsoft.AspNetCore</span>: 
+                Request took longer than expected: 5.2s
+            </div>
+            <div class="log-entry">
+                <span class="text-info">[2024-01-01 10:02:00]</span> 
+                <span class="text-danger">[Error]</span> 
+                <span class="text-warning">SmsService</span>: 
+                خطا در ارسال SMS به شماره 09987654321
+            </div>
+        </div>
+        
+        <div class="mt-3 text-center">
+            <small class="text-muted">نمایش آخرین 100 لاگ • بروزرسانی خودکار هر 30 ثانیه</small>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let autoRefresh = true;
+        
+        function refreshLogs() {
+            // Simulate log refresh
+            console.log('Refreshing logs...');
+            // در پیاده‌سازی واقعی، این تابع لاگ‌های جدید را از سرور دریافت می‌کند
+        }
+        
+        function clearLogs() {
+            if (confirm('آیا از پاک کردن لاگ‌ها اطمینان دارید؟')) {
+                document.getElementById('logs-container').innerHTML = '<div class="text-center text-muted">لاگ‌ها پاک شدند</div>';
+            }
+        }
+        
+        function filterLogs() {
+            const level = document.getElementById('logLevel').value;
+            const search = document.getElementById('searchLogs').value;
+            const date = document.getElementById('logDate').value;
+            
+            console.log('Filtering logs:', { level, search, date });
+            // در پیاده‌سازی واقعی، این تابع لاگ‌ها را بر اساس فیلترهای انتخاب شده نمایش می‌دهد
+        }
+        
+        // Auto refresh every 30 seconds
+        setInterval(function() {
+            if (autoRefresh) {
+                refreshLogs();
+            }
+        }, 30000);
+        
+        // Add new log entries simulation
+        setInterval(function() {
+            if (autoRefresh) {
+                const container = document.getElementById('logs-container');
+                const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+                const logTypes = [
+                    { level: 'Information', class: 'text-success', message: 'System health check completed' },
+                    { level: 'Debug', class: 'text-primary', message: 'Token validation successful' },
+                    { level: 'Warning', class: 'text-warning', message: 'High memory usage detected' }
+                ];
+                
+                const randomLog = logTypes[Math.floor(Math.random() * logTypes.length)];
+                const newLog = `
+                    <div class="log-entry">
+                        <span class="text-info">[${now}]</span> 
+                        <span class="${randomLog.class}">[${randomLog.level}]</span> 
+                        <span class="text-warning">IdentityServer8</span>: 
+                        ${randomLog.message}
+                    </div>
+                `;
+                
+                container.insertAdjacentHTML('afterbegin', newLog);
+                
+                // Keep only last 50 entries
+                const entries = container.getElementsByClassName('log-entry');
+                if (entries.length > 50) {
+                    entries[entries.length - 1].remove();
+                }
+            }
+        }, 10000);
+    </script>
+}

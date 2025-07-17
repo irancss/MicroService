@@ -1,0 +1,212 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: microservices
+  labels:
+    app: notification-service
+    version: v1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+        version: v1
+    spec:
+      containers:
+      - name: notification-service
+        image: your-registry.com/notification-service:latest
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 8081
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:8080;https://+:8081"
+        - name: ConnectionStrings__MongoDB
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: mongodb-connection
+        - name: RabbitMQ__Host
+          valueFrom:
+            configMapKeyRef:
+              name: notification-config
+              key: rabbitmq-host
+        - name: RabbitMQ__Username
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: rabbitmq-username
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: rabbitmq-password
+        - name: SendGrid__ApiKey
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: sendgrid-api-key
+        - name: Kavenegar__ApiKey
+          valueFrom:
+            secretKeyRef:
+              name: notification-secrets
+              key: kavenegar-api-key
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+        volumeMounts:
+        - name: app-secrets
+          mountPath: "/app/secrets"
+          readOnly: true
+      volumes:
+      - name: app-secrets
+        secret:
+          secretName: notification-secrets
+      serviceAccountName: notification-service
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1001
+        fsGroup: 1001
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: microservices
+  labels:
+    app: notification-service
+spec:
+  type: ClusterIP
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 8081
+    protocol: TCP
+    name: https
+  selector:
+    app: notification-service
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-config
+  namespace: microservices
+data:
+  rabbitmq-host: "rabbitmq-service.messaging.svc.cluster.local"
+  mongodb-database: "NotificationService"
+  log-level: "Information"
+  sendgrid-from-email: "noreply@yourcompany.com"
+  sendgrid-from-name: "Your Company"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: notification-secrets
+  namespace: microservices
+type: Opaque
+data:
+  # Base64 encoded values - replace with actual values
+  mongodb-connection: bW9uZ29kYjovL21vbmdvZGItc2VydmljZS5kYXRhYmFzZS5zdmMuY2x1c3Rlci5sb2NhbDoyNzAxNw==
+  rabbitmq-username: Z3Vlc3Q=
+  rabbitmq-password: Z3Vlc3Q=
+  sendgrid-api-key: eW91ci1zZW5kZ3JpZC1hcGkta2V5
+  kavenegar-api-key: eW91ci1rYXZlbmVnYXItYXBpLWtleQ==
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: notification-service
+  namespace: microservices
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: notification-service-ingress
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+spec:
+  tls:
+  - hosts:
+    - notification-api.yourcompany.com
+    secretName: notification-tls
+  rules:
+  - host: notification-api.yourcompany.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: notification-service
+            port:
+              number: 80
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: notification-service-hpa
+  namespace: microservices
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: notification-service
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

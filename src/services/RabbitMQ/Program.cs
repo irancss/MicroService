@@ -1,10 +1,8 @@
-﻿// Program.cs
+﻿using Microsoft.Extensions.Hosting; // اضافه کردن این using
 using MassTransit;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using OrderConsumer;
+using static MassTransit.MessageHeaders;
 
-var host = MessageHeaders.Host.CreateDefaultBuilder()
+var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder(args) // حذف MessageHeaders.Host
     .ConfigureServices(services =>
     {
         services.AddMassTransit(x =>
@@ -13,7 +11,11 @@ var host = MessageHeaders.Host.CreateDefaultBuilder()
 
             x.UsingRabbitMq((context, cfg) =>
             {
-                cfg.Host("rabbitmq://localhost");
+                cfg.Host("localhost", "/", h =>
+                {
+                    h.Username("guest");
+                    h.Password("guest");
+                });
 
                 cfg.ReceiveEndpoint("order-created-queue", e =>
                 {

@@ -1,0 +1,110 @@
+# .NET Core
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.docstates
+*.dll
+*.pdb
+*.exe
+*.log
+*.tmp
+*.vspscc
+*.vssscc
+.builds
+*.pidb
+*.svclog
+*.scc
+
+# Visual Studio
+.vs/
+*.userprefs
+*.usertasks
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# MongoDB
+mongodb-data/
+
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backup files
+backup-*/
+*.backup
+
+# Temporary files
+temp/
+tmp/
+*.tmp
+
+# Packages
+node_modules/
+packages/
+*.nupkg
+*.snupkg
+
+# Test results
+TestResults/
+coverage/
+*.coverage
+*.coveragexml
+
+# Build artifacts
+publish/
+dist/
+out/
+
+# Secrets
+secrets.json
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+
+# Local development certificates
+*.pfx
+*.p12
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# MacOS
+.DS_Store

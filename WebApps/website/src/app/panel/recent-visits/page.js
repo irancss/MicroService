@@ -1,8 +1,8 @@
 "use client";
-import ProductCart from "@/app/components/General/Product/Cart";
+import ProductCart from "@components/General/Product/Cart";
 import { useState } from "react";
-import AnimatedHr from "@/app/components/Animated/Hr";
-import AnimatedDiv from "@/app/components/Animated/Div";
+import AnimatedHr from "@components/Animated/Hr";
+import AnimatedDiv from "@components/Animated/Div";
 export default function RecentVisitsPage() {
   const initialVisits = [
     {

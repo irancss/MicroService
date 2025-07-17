@@ -1,7 +1,13 @@
 {
   "compilerOptions": {
+    "baseUrl": ".", // ضروری!
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./*"],
+      "@components/*": ["src/app/components/*"],
+      "@lib/*": ["src/lib/*"],
+      "@data/*": ["src/data/*"],
+      "@constants/*": ["src/constants/*"],
+      "@hooks/*": ["src/hooks/*"]
     }
   }
 }

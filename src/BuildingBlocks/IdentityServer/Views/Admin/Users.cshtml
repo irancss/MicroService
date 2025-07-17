@@ -1,0 +1,184 @@
+@model UsersListViewModel
+@{
+    ViewData["Title"] = "مدیریت کاربران";
+    Layout = "_AdminLayout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>مدیریت کاربران (@Model.TotalUsers کاربر)</h2>
+    <form method="get" class="d-flex">
+        <input type="text" name="search" value="@Model.SearchTerm" class="form-control me-2" placeholder="جستجوی کاربر...">
+        <button type="submit" class="btn btn-outline-primary">جستجو</button>
+        @if (!string.IsNullOrEmpty(Model.SearchTerm))
+        {
+            <a href="/admin/users" class="btn btn-outline-secondary ms-2">پاک کردن</a>
+        }
+    </form>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-dark">
+                    <tr>
+                        <th>شماره موبایل</th>
+                        <th>نام کامل</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ عضویت</th>
+                        <th>آخرین ورود</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in Model.Users)
+                    {
+                        <tr data-user-id="@user.Id">
+                            <td>
+                                <strong>@user.PhoneNumber</strong>
+                                @if (user.IsMobileVerified)
+                                {
+                                    <i class="fas fa-check-circle text-success" title="تایید شده"></i>
+                                }
+                            </td>
+                            <td>@(string.IsNullOrEmpty(user.FullName) ? "نامشخص" : user.FullName)</td>
+                            <td>
+                                @if (user.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">غیرفعال</span>
+                                }
+                                
+                                @if (user.LockoutEndDate.HasValue && user.LockoutEndDate > DateTime.UtcNow)
+                                {
+                                    <span class="badge bg-warning">قفل شده</span>
+                                }
+                            </td>
+                            <td>@user.CreatedAt.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))</td>
+                            <td>
+                                @if (user.LastLoginDate.HasValue)
+                                {
+                                    @user.LastLoginDate.Value.ToString("yyyy/MM/dd HH:mm", new System.Globalization.CultureInfo("fa-IR"))
+                                }
+                                else
+                                {
+                                    <span class="text-muted">هرگز</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleUserStatus('@user.Id', @user.IsActive.ToString().ToLower())">
+                                        @if (user.IsActive)
+                                        {
+                                            <i class="fas fa-user-times"></i> @("غیرفعال")
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-user-check"></i> @("فعال")
+                                        }
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteUser('@user.Id', '@user.PhoneNumber')">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        
+        @if (!Model.Users.Any())
+        {
+            <div class="text-center py-4">
+                <p class="text-muted">هیچ کاربری یافت نشد</p>
+                @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                {
+                    <a href="/admin/users" class="btn btn-primary">نمایش همه کاربران</a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model.TotalPages > 1)
+{
+    <nav aria-label="Page navigation" class="mt-4">
+        <ul class="pagination justify-content-center">
+            @if (Model.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?page=@(Model.CurrentPage - 1)&search=@Model.SearchTerm">قبلی</a>
+                </li>
+            }
+            
+            @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" href="?page=@i&search=@Model.SearchTerm">@i</a>
+                </li>
+            }
+            
+            @if (Model.CurrentPage < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="?page=@(Model.CurrentPage + 1)&search=@Model.SearchTerm">بعدی</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+    <script>
+        function toggleUserStatus(userId, currentStatus) {
+            if (confirm(currentStatus ? 'آیا از غیرفعال کردن این کاربر اطمینان دارید؟' : 'آیا از فعال کردن این کاربر اطمینان دارید؟')) {
+                fetch(`/admin/users/${userId}/toggle-status`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('خطا در تغییر وضعیت کاربر');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('خطا در تغییر وضعیت کاربر');
+                });
+            }
+        }
+
+        function deleteUser(userId, phoneNumber) {
+            if (confirm(`آیا از حذف کاربر ${phoneNumber} اطمینان دارید؟ این عمل قابل بازگشت نیست.`)) {
+                fetch(`/admin/users/${userId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.querySelector(`tr[data-user-id="${userId}"]`).remove();
+                        alert('کاربر با موفقیت حذف شد');
+                    } else {
+                        alert('خطا در حذف کاربر');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('خطا در حذف کاربر');
+                });
+            }
+        }
+    </script>
+}

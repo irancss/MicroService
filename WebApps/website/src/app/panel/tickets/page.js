@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import AnimatedHr from "@/app/components/Animated/Hr";
+import AnimatedHr from "@components/Animated/Hr";
 import Link from "next/link";
 
 const initialTickets = [

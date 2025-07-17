@@ -29,9 +29,12 @@ public abstract class ValueObject
 
     public override int GetHashCode()
     {
-        return GetEqualityComponents()
-            .Select(x => x?.GetHashCode() ?? 0)
-            .Aggregate((x, y) => x ^ y);
+        var hashCode = new HashCode();
+    foreach (var component in GetEqualityComponents())
+    {
+        hashCode.Add(component);
+    }
+    return hashCode.ToHashCode();
     }
 
     public static bool operator ==(ValueObject one, ValueObject two)

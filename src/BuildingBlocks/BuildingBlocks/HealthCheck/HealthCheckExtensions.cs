@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Builder;
@@ -14,109 +14,95 @@ namespace BuildingBlocks.HealthCheck
         {
             var healthCheckBuilder = services.AddHealthChecks();
 
-            // Add RabbitMQ health check
-            var rabbitMqConnectionString = configuration.GetConnectionString("RabbitMQ");
+            // Liveness check: Is the app process alive?
+            healthCheckBuilder.AddCheck("self", () => HealthCheckResult.Healthy(), tags: new[] { "live" });
+
+            // Readiness checks: Is the app ready to handle requests (dependencies are up)?
+
+            // RabbitMQ health check
+            var rabbitMqConnectionString = configuration["RabbitMQ:Host"]; // Read host instead of a full connection string
             if (!string.IsNullOrEmpty(rabbitMqConnectionString))
             {
-                healthCheckBuilder.AddRabbitMQ(rabbitMqConnectionString, name: "rabbitmq");
+                healthCheckBuilder.AddRabbitMQ(
+                    // رشته را به یک شیء Uri تبدیل می‌کنیم
+                    new Uri($"amqp://{configuration["RabbitMQ:Username"]}:{configuration["RabbitMQ:Password"]}@{configuration["RabbitMQ:Host"]}{configuration["RabbitMQ:VirtualHost"]}"),
+                    name: "rabbitmq",
+                    tags: new[] { "ready" });
             }
 
-            // Add Consul health check
-            var consulSettings = configuration.GetSection("Consul").Get<ConsulHealthCheckSettings>();
-            if (consulSettings != null)
+            // Consul health check
+            var consulAddress = configuration["Consul:Address"];
+            if (!string.IsNullOrEmpty(consulAddress))
             {
                 healthCheckBuilder.AddConsul(options =>
                 {
-                    options.HostName = consulSettings.Host;
-                    options.Port = consulSettings.Port;
-                }, name: "consul");
+                    var consulUri = new Uri(consulAddress);
+                    options.HostName = consulUri.Host;
+                    options.Port = consulUri.Port;
+                    // اگر از HTTPS برای کنسول استفاده می‌کنید، این خط را اضافه کنید:
+                    // options.Scheme = consulUri.Scheme; 
+                }, name: "consul", tags: new[] { "ready" });
             }
 
-            // Add custom application health check
-            healthCheckBuilder.AddCheck<ApplicationHealthCheck>("application");
+            // Database health check (PostgreSQL)
+            var dbConnectionString = configuration.GetConnectionString("DefaultConnection");
+            if (!string.IsNullOrEmpty(dbConnectionString))
+            {
+                healthCheckBuilder.AddNpgSql(dbConnectionString, name: "database", tags: new[] { "ready" });
+            }
+
+            // Redis health check
+            var redisConnectionString = configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrEmpty(redisConnectionString))
+            {
+                healthCheckBuilder.AddRedis(redisConnectionString, name: "redis", tags: new[] { "ready" });
+            }
 
             return services;
         }
 
         public static IApplicationBuilder UseBuildingBlocksHealthChecks(this IApplicationBuilder app)
         {
-            app.UseHealthChecks("/health", new HealthCheckOptions
-            {
-                ResponseWriter = WriteHealthCheckResponse
-            });
-
-            app.UseHealthChecks("/health/ready", new HealthCheckOptions
-            {
-                Predicate = check => check.Tags.Contains("ready"),
-                ResponseWriter = WriteHealthCheckResponse
-            });
-
+            // Responds on /health/live - Checks if the app is running
             app.UseHealthChecks("/health/live", new HealthCheckOptions
             {
-                Predicate = _ => false,
+                Predicate = check => check.Tags.Contains("live"),
+                ResponseWriter = WriteHealthCheckResponse
+            });
+
+            // Responds on /health/ready - Checks if the app and its dependencies are ready to accept traffic
+            app.UseHealthChecks("/health/ready", new HealthCheckOptions
+            {
+                Predicate = _ => true, // Check all, including dependencies
                 ResponseWriter = WriteHealthCheckResponse
             });
 
             return app;
         }
 
-        private static async Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
+        private static Task WriteHealthCheckResponse(HttpContext context, HealthReport report)
         {
-            context.Response.ContentType = "application/json";
+            context.Response.ContentType = "application/json; charset=utf-8";
 
-            var response = new
+            var options = new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
+            var json = JsonSerializer.Serialize(new
             {
                 status = report.Status.ToString(),
-                checks = report.Entries.Select(entry => new
-                {
-                    name = entry.Key,
-                    status = entry.Value.Status.ToString(),
-                    exception = entry.Value.Exception?.Message,
-                    duration = entry.Value.Duration.ToString(),
-                    data = entry.Value.Data
-                }),
-                totalDuration = report.TotalDuration
-            };
+                totalDuration = report.TotalDuration.TotalMilliseconds,
+                results = report.Entries.ToDictionary(
+                    e => e.Key,
+                    e => new
+                    {
+                        status = e.Value.Status.ToString(),
+                        description = e.Value.Description,
+                        duration = e.Value.Duration.TotalMilliseconds,
+                        exception = e.Value.Exception?.Message,
+                        data = e.Value.Data
+                    })
+            }, options);
 
-            await context.Response.WriteAsync(JsonSerializer.Serialize(response, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = true
-            }));
-        }
-    }
-
-    public class ConsulHealthCheckSettings
-    {
-        public string Host { get; set; } = "localhost";
-        public int Port { get; set; } = 8500;
-    }
-
-    public class ApplicationHealthCheck : IHealthCheck
-    {
-        public Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-        {
-            // Add your custom health check logic here
-            // For example, check database connectivity, external services, etc.
-            
-            try
-            {
-                // Simulate health check logic
-                var isHealthy = true; // Replace with actual health check logic
-                
-                if (isHealthy)
-                {
-                    return Task.FromResult(HealthCheckResult.Healthy("Application is healthy"));
-                }
-                else
-                {
-                    return Task.FromResult(HealthCheckResult.Unhealthy("Application is unhealthy"));
-                }
-            }
-            catch (Exception ex)
-            {
-                return Task.FromResult(HealthCheckResult.Unhealthy($"Health check failed: {ex.Message}"));
-            }
+            return context.Response.WriteAsync(json);
         }
     }
 }

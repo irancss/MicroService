@@ -1,4 +1,5 @@
-﻿using ProductService.Application.Mappings;
+﻿using BuildingBlocks.Application.Mappings;
+using ProductService.Application.Mappings;
 
 namespace ProductService.Application.DTOs.Brand
 {

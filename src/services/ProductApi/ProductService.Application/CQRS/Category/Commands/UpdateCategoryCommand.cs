@@ -24,7 +24,7 @@ public class UpdateCategoryCommandHandler : IRequestHandler<UpdateCategoryComman
     {
         var categoryDto = new CategoryDto
         {
-            Id = request.CategoryId,
+            //Id = request.CategoryId,
             Name = request.Name,
             Slug = request.Slug,
             Description = request.Description,

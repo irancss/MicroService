@@ -250,12 +250,12 @@ public class ClearCartCommandHandler : IRequestHandler<ClearCartCommand, CartOpe
             await _cartRepository.SaveAsync(cart);
 
             // Publish event
-            await _eventPublisher.PublishAsync(new Domain.Events.CartDomainEvent
+            await _eventPublisher.PublishAsync(new Domain.Events.CartClearedEvent
             {
                 CartId = cart.Id,
                 UserId = cart.UserId,
                 GuestId = cart.GuestId,
-                EventType = Domain.Enums.CartEventType.CartCleared
+                EventType = Domain.Enums.CartEventType.CartCleared,
             });
 
             // Convert to DTO

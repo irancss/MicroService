@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityServer.Controllers;
 
+#if DEBUG
 [ApiController]
 [Route("debug")]
 public class DebugController : ControllerBase
@@ -52,3 +53,5 @@ public class DebugController : ControllerBase
         }
     }
 }
+
+#endif

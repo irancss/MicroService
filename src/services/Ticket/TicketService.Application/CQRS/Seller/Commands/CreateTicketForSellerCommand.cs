@@ -24,7 +24,8 @@ namespace TicketService.Application.CQRS.Seller.Commands
 
         public async Task<string> Handle(CreateTicketForSellerCommand request, CancellationToken cancellationToken)
         {
-            return await _ticketService.CreateTicketForSellerAsync(request.SellerId, request.TicketDetails, cancellationToken);
+            //return await _ticketService.CreateTicketForSellerAsync(request.SellerId, request.TicketDetails, cancellationToken);
+            return "";
         }
     }
 }

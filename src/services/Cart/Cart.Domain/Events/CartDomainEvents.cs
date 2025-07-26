@@ -73,7 +73,15 @@ public class NextPurchaseActivatedEvent : CartDomainEvent
         EventType = CartEventType.NextPurchaseActivated;
     }
 }
+public class CartClearedEvent : CartDomainEvent
+{
+    public CartType CartType { get; set; }
 
+    public CartClearedEvent()
+    {
+        EventType = CartEventType.CartCleared;
+    }
+}
 public class CartMergedEvent : CartDomainEvent
 {
     public string GuestCartId { get; set; } = string.Empty;

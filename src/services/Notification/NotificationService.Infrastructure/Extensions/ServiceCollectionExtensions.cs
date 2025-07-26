@@ -7,7 +7,6 @@ using NotificationService.Infrastructure.Consumers;
 using NotificationService.Infrastructure.Providers;
 using NotificationService.Infrastructure.Repositories;
 using NotificationService.Infrastructure.Services;
-using SendGrid.Extensions.DependencyInjection;
 
 namespace NotificationService.Infrastructure.Extensions;
 
@@ -37,10 +36,10 @@ public static class ServiceCollectionExtensions
         services.Configure<SendGridOptions>(configuration.GetSection("SendGrid"));
         services.Configure<KavenegarOptions>(configuration.GetSection("Kavenegar"));
 
-        services.AddSendGrid(options =>
-        {
-            options.ApiKey = configuration["SendGrid:ApiKey"]!;
-        });
+        //services.AddSendGrid(options =>
+        //{
+        //    options.ApiKey = configuration["SendGrid:ApiKey"]!;
+        //});
 
         services.AddHttpClient<KavenegarSmsProvider>();
         

@@ -1,6 +1,8 @@
-﻿namespace ProductService.Application.DTOs.Product
+﻿using BuildingBlocks.Application.Mappings;
+
+namespace ProductService.Application.DTOs.Product
 {
-    public class ProductDto : Domain.Models.Product
+    public class ProductDto : IMapFrom<Domain.Models.Product>
     {
         public string Id { get; set; }
         public string Sku { get; set; }
@@ -14,6 +16,7 @@
         public double AverageRating { get; set; }
         public int ReviewCount { get; set; }
         public bool IsActive { get; set; }
+        public int StockQuantity { get; set; }
 
         // Optional: Add a constructor for easier initialization
         public ProductDto()

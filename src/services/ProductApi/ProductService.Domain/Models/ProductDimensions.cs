@@ -1,4 +1,4 @@
-﻿using ProductService.Domain.Common;
+﻿using BuildingBlocks.Domain.Entities;
 
 /// <summary>
 /// Represents the dimensions of a product.

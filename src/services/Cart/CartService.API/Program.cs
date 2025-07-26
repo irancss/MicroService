@@ -3,6 +3,7 @@ using Cart.Infrastructure;
 using Hangfire;
 using Serilog;
 using FluentValidation.AspNetCore;
+using Hangfire.Dashboard;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -88,12 +89,12 @@ builder.Services.AddCors(options =>
 builder.Services.AddApiVersioning(opt =>
 {
     opt.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
-    opt.AssumeDefaultVersionWhenUnspecified = true;
-    opt.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersioning.ApiVersionReader.Combine(
-        new Microsoft.AspNetCore.Mvc.ApiVersioning.QueryStringApiVersionReader("apiVersion"),
-        new Microsoft.AspNetCore.Mvc.ApiVersioning.HeaderApiVersionReader("X-Version"),
-        new Microsoft.AspNetCore.Mvc.ApiVersioning.MediaTypeApiVersionReader("ver")
-    );
+    //opt.AssumeDefaultVersionWhenUnspecified = true;
+    //opt.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersioning.ApiVersionReader.Combine(
+    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.QueryStringApiVersionReader("apiVersion"),
+    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.HeaderApiVersionReader("X-Version"),
+    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.MediaTypeApiVersionReader("ver")
+    //);
 });
 
 builder.Services.AddVersionedApiExplorer(setup =>

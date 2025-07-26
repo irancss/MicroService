@@ -1,11 +1,11 @@
+using BuildingBlocks.Identity;
 using MassTransit;
 using Microsoft.OpenApi.Models;
-using Serilog.Formatting.Compact;
-using Serilog;
-using logger = Serilog.ILogger;
 using OrderService.Application;
 using OrderService.Infrastructure.Data.Configurations;
-using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using Serilog;
+using Serilog.Formatting.Compact;
+using logger = Serilog.ILogger;
 
 // Program.cs: Main entry point for the Order Service API using .NET minimal hosting model
 // --------------------------------------------------------------
@@ -17,6 +17,9 @@ var builder = WebApplication.CreateBuilder(args);
 var logger = ConfigureLogger();
 logger.Information("Logger configured");
 
+
+var configuration = builder.Configuration;
+builder.Services.AddJwtAuthentication(configuration);
 
 
 // Register application-specific services
@@ -72,6 +75,8 @@ app.UseRouting();
 
 // Use health checks and authorization middlewares
 app.UseHealthChecks("/health");
+
+app.UseAuthentication();
 app.UseAuthorization();
 
 // Map controller endpoints

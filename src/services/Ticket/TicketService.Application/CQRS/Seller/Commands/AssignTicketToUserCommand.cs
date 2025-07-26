@@ -26,8 +26,9 @@ namespace TicketService.Application.CQRS.Seller.Commands
 
         public async Task<IEnumerable<TicketDto>> Handle(AssignTicketToUserCommand request, CancellationToken cancellationToken)
         {
-            var tickets = await _ticketService.AssignTicketToUserAsync(request.TicketId, request.UserId, cancellationToken);
-            return _mapper.Map<IEnumerable<TicketDto>>(tickets);
+            //var tickets = await _ticketService.AssignTicketToUserAsync(request.TicketId, request.UserId, cancellationToken);
+            //return _mapper.Map<IEnumerable<TicketDto>>(tickets);
+            return new List<TicketDto>();
         }
     }
 }

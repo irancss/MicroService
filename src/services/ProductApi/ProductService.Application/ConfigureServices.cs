@@ -31,7 +31,7 @@ namespace ProductService.Application
             services.AddScoped<IAnswerService , AnswerService>();
             services.AddScoped<IBrandService, BrandService>();
 
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            //services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             // Register MediatR services
             services.AddMediatR(Assembly.GetExecutingAssembly());

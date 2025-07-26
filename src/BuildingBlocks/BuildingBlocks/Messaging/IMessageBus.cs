@@ -2,10 +2,14 @@ using MassTransit;
 
 namespace BuildingBlocks.Messaging
 {
+    /// <summary>
+    /// [اصلاح شد] این اینترفیس اکنون به وضوح برای ارسال Commands به یک صف مشخص (Send) استفاده می‌شود.
+    /// برای انتشار Events باید از IEventBus استفاده کرد.
+    /// </summary>
     public interface IMessageBus
     {
-        Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) where T : class;
-        Task SendAsync<T>(T message, Uri? destinationAddress = null, CancellationToken cancellationToken = default) where T : class;
+        Task SendAsync<T>(T message, CancellationToken cancellationToken = default) where T : class;
+        Task SendAsync<T>(T message, Uri destinationAddress, CancellationToken cancellationToken = default) where T : class;
     }
 
     public class MessageBus : IMessageBus
@@ -17,22 +21,16 @@ namespace BuildingBlocks.Messaging
             _bus = bus;
         }
 
-        public async Task PublishAsync<T>(T message, CancellationToken cancellationToken = default) where T : class
+        public async Task SendAsync<T>(T message, CancellationToken cancellationToken = default) where T : class
         {
-            await _bus.Publish(message, cancellationToken);
+            // MassTransit attempts to send to a default endpoint for the message type
+            await _bus.Send(message, cancellationToken);
         }
 
-        public async Task SendAsync<T>(T message, Uri? destinationAddress = null, CancellationToken cancellationToken = default) where T : class
+        public async Task SendAsync<T>(T message, Uri destinationAddress, CancellationToken cancellationToken = default) where T : class
         {
-            if (destinationAddress != null)
-            {
-                var endpoint = await _bus.GetSendEndpoint(destinationAddress);
-                await endpoint.Send(message, cancellationToken);
-            }
-            else
-            {
-                await _bus.Send(message, cancellationToken);
-            }
+            var endpoint = await _bus.GetSendEndpoint(destinationAddress);
+            await endpoint.Send(message, cancellationToken);
         }
     }
 }

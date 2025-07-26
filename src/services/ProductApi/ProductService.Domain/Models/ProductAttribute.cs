@@ -1,4 +1,5 @@
-﻿using ProductService.Domain.Common;
+﻿using BuildingBlocks.Domain.Entities;
+
 
 namespace ProductService.Domain.Models;
 

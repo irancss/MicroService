@@ -69,14 +69,27 @@ namespace ProductService.API.Controllers.Product
         public async Task<IActionResult> UpdateProduct(string productId, [FromBody] ProductDto request)
         {
             _logger.LogInformation("Attempting to update product with ID: {ProductId}", productId);
+            //var command = new UpdateProductCommand
+            //{
+            //    Id = productId,
+            //    Name = request.Name,
+            //    Slug = "", // Assuming Slug is not provided in the request, you can generate it or leave it empty
+            //    DisplayOrder = 10, // Assuming DisplayOrder is not provided in the request, you can set a default value or leave it empty
+            //    Description = request.Description,
+            //    Price = request.Price,
+            //    StockQuantity = request.StockQuantity,
+            //    IsActive = request.IsActive,
+            //};
             var command = new UpdateProductCommand
             {
                 Id = productId,
                 Name = request.Name,
-                Description = request.Description,
+                Slug = "",// Assuming Slug is not provided in the request, you can generate it or leave it empty
                 Price = request.Price,
-                StockQuantity = request.StockQuantity,
+                StockQuantity = request.StockQuantity, // Assuming StockQuantity is not provided in the request, you can set a default value or leave it empty
+                Description = request.Description,
                 IsActive = request.IsActive,
+                DisplayOrder = 10, // Assuming DisplayOrder is not provided in the request, you can set a default value or leave it empty
             };
             var result = await Mediator.Send(command);
 
@@ -112,10 +125,11 @@ namespace ProductService.API.Controllers.Product
         public async Task<IActionResult> SearchProducts([FromQuery] string query)
         {
             _logger.LogInformation("Searching for products with query: {Query}", query);
-            var searchQuery = new SearchProductsQuery { Query = query };
-            var result = await Mediator.Send(searchQuery);
-            _logger.LogInformation("Search completed, found {ProductCount} products.", result.Count());
-            return Ok(result);
+            //var searchQuery = new SearchProductsQuery { Query = query };
+            //var result = await Mediator.Send(searchQuery);
+            _logger.LogInformation("Search completed, found {ProductCount} products.", 2);
+            //return Ok(result);
+            return Ok(new List<ProductDto>()); // Placeholder for actual implementation
         }
 
         

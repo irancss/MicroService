@@ -155,8 +155,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Identity", "Identity", "{DC
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IdentityServer", "src\BuildingBlocks\IdentityServer\IdentityServer.csproj", "{8C85125D-2F94-0C79-A0DD-812BDA3C3855}"
 EndProject
-Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Payment", "Payment", "{89C5BCFD-02DA-4454-B0B7-1551E7FF9D13}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Payment.Application", "src\services\Payment\Payment.Application\Payment.Application.csproj", "{E8F9C39E-C009-4639-BA2D-704A18622F3E}"
@@ -407,10 +405,6 @@ Global
 		{8C85125D-2F94-0C79-A0DD-812BDA3C3855}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8C85125D-2F94-0C79-A0DD-812BDA3C3855}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8C85125D-2F94-0C79-A0DD-812BDA3C3855}.Release|Any CPU.Build.0 = Release|Any CPU
-		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E8F9C39E-C009-4639-BA2D-704A18622F3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E8F9C39E-C009-4639-BA2D-704A18622F3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E8F9C39E-C009-4639-BA2D-704A18622F3E}.Release|Any CPU.ActiveCfg = Release|Any CPU

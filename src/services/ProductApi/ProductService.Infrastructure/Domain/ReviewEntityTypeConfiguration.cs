@@ -1,7 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BuildingBlocks.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using ProductService.Domain.Models;
-using ProductService.Domain.Common;
 
 namespace ProductService.Infrastructure.Domain
 {

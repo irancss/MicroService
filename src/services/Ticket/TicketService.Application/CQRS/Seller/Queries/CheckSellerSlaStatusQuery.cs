@@ -29,8 +29,10 @@ namespace TicketService.Application.CQRS.Seller.Queries
 
         public async Task<IEnumerable<TicketDto>> Handle(CheckSellerSlaStatusQuery request, CancellationToken cancellationToken)
         {
-            return _mapper.Map<IEnumerable<TicketDto>>(
-                await _ticketService.CheckSellerSlaStatusAsync(request.SellerId, cancellationToken));
+            //return _mapper.Map<IEnumerable<TicketDto>>(
+            //    await _ticketService.CheckSellerSlaStatusAsync(request.SellerId, cancellationToken));
+
+            return new List<TicketDto>();
         }
     }
 }

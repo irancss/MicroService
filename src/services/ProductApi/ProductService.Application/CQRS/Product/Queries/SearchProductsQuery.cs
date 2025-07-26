@@ -1,3 +1,8 @@
+using AutoMapper;
+using MediatR;
+using ProductService.Application.DTOs;
+using ProductService.Application.DTOs.Product;
+
 namespace ProductService.Application.CQRS.Product.Queries;
 
 public class SearchProductsQuery : IRequest<PaginatedList<ProductDto>>
@@ -27,7 +32,8 @@ public class SearchProductsQueryHandler : IRequestHandler<SearchProductsQuery, P
 
     public async Task<PaginatedList<ProductDto>> Handle(SearchProductsQuery request, CancellationToken cancellationToken)
     {
-        var products = await _productService.SearchAsync(request.Query, request.PageNumber, request.PageSize);
-        return _mapper.Map<PaginatedList<ProductDto>>(products);
+        //var products = await _productService.SearchAsync(request.Query, request.PageNumber, request.PageSize);
+        //return _mapper.Map<PaginatedList<ProductDto>>(products);
+        return new PaginatedList<ProductDto>(new List<ProductDto>(), 0, request.PageNumber, request.PageSize); // Placeholder for actual implementation
     }
 }

@@ -22,14 +22,14 @@ namespace TicketService.API.Controllers.Ticket
         [HttpGet("{sellerId}")]
         public async Task<IActionResult> GetTicketsBySeller(string sellerId, int page = 1, int pageSize = 10, string sortBy = "date", string filter = null)
         {
-            _logger.LogInformation("Fetching tickets for sellerId: {SellerId}, page: {Page}, pageSize: {PageSize}, sortBy: {SortBy}, filter: {Filter}", sellerId, page, pageSize, sortBy, filter);
-            var tickets = await Mediator.Send(new GetTicketsBySellerQuery(sellerId, page, pageSize, sortBy, filter));
-            if (tickets == null || !tickets.Any())
-            {
-                _logger.LogWarning("No tickets found for sellerId: {SellerId}", sellerId);
-                return NotFound(new { message = $"No tickets found for seller {sellerId}" });
-            }
-            return Ok(tickets);
+            //_logger.LogInformation("Fetching tickets for sellerId: {SellerId}, page: {Page}, pageSize: {PageSize}, sortBy: {SortBy}, filter: {Filter}", sellerId, page, pageSize, sortBy, filter);
+            //var tickets = await Mediator.Send(new GetTicketsBySellerQuery(sellerId, page, pageSize, sortBy, filter));
+            //if (tickets == null || !tickets.Any())
+            //{
+            //    _logger.LogWarning("No tickets found for sellerId: {SellerId}", sellerId);
+            //    return NotFound(new { message = $"No tickets found for seller {sellerId}" });
+            //}
+            return Ok();
         }
 
         // 2. ایجاد تیکت برای یک فروشنده خاص

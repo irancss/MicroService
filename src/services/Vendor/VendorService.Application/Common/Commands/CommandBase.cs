@@ -1,3 +1,5 @@
+using VendorService.Application.Common.Commands;
+
 namespace VendorService.application.Common.Commands;
   public class CommandBase
   {

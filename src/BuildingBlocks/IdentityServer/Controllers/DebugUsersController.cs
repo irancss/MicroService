@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityServer.Controllers;
 
+#if DEBUG
 public class DebugUsersController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
@@ -37,7 +38,7 @@ public class DebugUsersController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> CheckUser(string phoneNumber = "09123456789")
+    public async Task<IActionResult> CheckUser(string phoneNumber = "09124607630")
     {
         var user = await _userManager.FindByNameAsync(phoneNumber);
         if (user == null)
@@ -71,7 +72,7 @@ public class DebugUsersController : Controller
     }
 
     [HttpPost]
-    public async Task<IActionResult> TestPassword(string phoneNumber = "09123456789", string password = "Admin123!")
+    public async Task<IActionResult> TestPassword(string phoneNumber = "09124607630", string password = "Ji'%w@4o03c|Gc.qKK")
     {
         var user = await _userManager.FindByNameAsync(phoneNumber);
         if (user == null)
@@ -80,7 +81,7 @@ public class DebugUsersController : Controller
         }
 
         var passwordValid = await _userManager.CheckPasswordAsync(user, password);
-        
+
         return Json(new
         {
             success = passwordValid,
@@ -97,3 +98,5 @@ public class DebugUsersController : Controller
         });
     }
 }
+
+#endif

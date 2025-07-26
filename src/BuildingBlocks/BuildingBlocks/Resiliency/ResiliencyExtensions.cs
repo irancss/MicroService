@@ -4,71 +4,72 @@ using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.Extensions.Http;
 using Polly.Timeout;
-using System.Net;
+using Polly.Registry;
 
 namespace BuildingBlocks.Resiliency
 {
-    /// <summary>
-    /// Resiliency patterns using Polly for HTTP clients and general operations
-    /// </summary>
     public static class ResiliencyExtensions
     {
         public static IServiceCollection AddResiliency(this IServiceCollection services, IConfiguration configuration)
         {
-            var resiliencySettings = configuration.GetSection("Resiliency").Get<ResiliencySettings>() ?? new ResiliencySettings();
             services.Configure<ResiliencySettings>(configuration.GetSection("Resiliency"));
+            var resiliencySettings = configuration.GetSection("Resiliency").Get<ResiliencySettings>() ?? new ResiliencySettings();
 
-            // Add HTTP client with Polly policies
-            services.AddHttpClient("resilient-client")
-                .AddPolicyHandler(GetRetryPolicy(resiliencySettings))
-                .AddPolicyHandler(GetCircuitBreakerPolicy(resiliencySettings))
-                .AddPolicyHandler(GetTimeoutPolicy(resiliencySettings));
-
-            // Register resilient HTTP client factory
-            services.AddSingleton<IResilientHttpClientFactory, ResilientHttpClientFactory>();
+            var policyRegistry = services.AddPolicyRegistry();
+            policyRegistry.Add("default-retry", GetRetryPolicy(resiliencySettings));
+            policyRegistry.Add("default-circuit-breaker", GetCircuitBreakerPolicy(resiliencySettings));
+            policyRegistry.Add("default-timeout", GetTimeoutPolicy(resiliencySettings));
 
             return services;
         }
 
-        private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(ResiliencySettings settings)
+        public static IHttpClientBuilder AddResilientHttpPolicies(this IHttpClientBuilder builder, IConfiguration configuration)
+        {
+            var resiliencySettings = configuration.GetSection("Resiliency").Get<ResiliencySettings>() ?? new ResiliencySettings();
+
+            return builder
+                .AddPolicyHandler(GetRetryPolicy(resiliencySettings))
+                .AddPolicyHandler(GetCircuitBreakerPolicy(resiliencySettings))
+                .AddPolicyHandler(GetTimeoutPolicy(resiliencySettings));
+        }
+
+        public static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy(ResiliencySettings settings)
         {
             return HttpPolicyExtensions
                 .HandleTransientHttpError()
                 .Or<TimeoutRejectedException>()
                 .WaitAndRetryAsync(
                     retryCount: settings.RetryCount,
-                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) + TimeSpan.FromMilliseconds(Random.Shared.Next(0, 100)),
+                    sleepDurationProvider: retryAttempt =>
+                        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)) +
+                        TimeSpan.FromMilliseconds(Random.Shared.Next(0, 100)),
                     onRetry: (outcome, timespan, retryCount, context) =>
                     {
-                        var logger = context.GetLogger();
-                        logger?.LogWarning("Retry {RetryCount} for {OperationKey} in {TimeSpan}ms due to: {Exception}",
-                            retryCount, context.OperationKey, timespan.TotalMilliseconds, outcome.Exception?.Message);
+                        context.GetLogger()?.LogWarning(
+                            "Retry {RetryCount} for {PolicyKey} in {TimeSpan}ms, due to: {ExceptionMessage}",
+                            retryCount, context.PolicyKey, timespan.TotalMilliseconds, outcome.Exception?.Message);
                     });
         }
 
-        private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(ResiliencySettings settings)
+        public static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy(ResiliencySettings settings)
         {
             return HttpPolicyExtensions
                 .HandleTransientHttpError()
                 .CircuitBreakerAsync(
                     handledEventsAllowedBeforeBreaking: settings.CircuitBreakerFailureThreshold,
                     durationOfBreak: TimeSpan.FromSeconds(settings.CircuitBreakerDurationOfBreakInSeconds),
-                    onBreak: (delegateResult, timespan, context) =>
-                    {
-                        var logger = context.GetLogger();
-                        logger?.LogWarning("Circuit breaker opened for {Duration}s for operation: {OperationKey}",
-                            timespan.TotalSeconds, context.OperationKey);
+                    onBreak: (result, timespan, context) => {
+                        context.GetLogger()?.LogWarning("Circuit breaker opened for {Duration}s for {PolicyKey}, due to: {ExceptionMessage}",
+                            timespan.TotalSeconds, context.PolicyKey, result.Exception?.Message);
                     },
-                    onReset: (context) =>
-                    {
-                        var logger = context.GetLogger();
-                        logger?.LogInformation("Circuit breaker reset for operation: {OperationKey}", context.OperationKey);
+                    onReset: (context) => {
+                        context.GetLogger()?.LogInformation("Circuit breaker reset for {PolicyKey}", context.PolicyKey);
                     });
         }
 
-        private static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy(ResiliencySettings settings)
+        public static IAsyncPolicy<HttpResponseMessage> GetTimeoutPolicy(ResiliencySettings settings)
         {
-            return Policy.TimeoutAsync<HttpResponseMessage>(settings.TimeoutInSeconds);
+            return Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(settings.TimeoutInSeconds));
         }
     }
 
@@ -80,61 +81,23 @@ namespace BuildingBlocks.Resiliency
         public int TimeoutInSeconds { get; set; } = 10;
     }
 
-    public interface IResilientHttpClientFactory
-    {
-        HttpClient CreateClient(string name = "resilient-client");
-        Task<T> ExecuteAsync<T>(Func<HttpClient, Task<T>> operation, string operationKey = "http-operation");
-    }
-
-    public class ResilientHttpClientFactory : IResilientHttpClientFactory
-    {
-        private readonly IHttpClientFactory _httpClientFactory;
-        private readonly ILogger<ResilientHttpClientFactory> _logger;
-        private readonly ResiliencySettings _settings;
-
-        public ResilientHttpClientFactory(
-            IHttpClientFactory httpClientFactory,
-            ILogger<ResilientHttpClientFactory> logger,
-            Microsoft.Extensions.Options.IOptions<ResiliencySettings> settings)
-        {
-            _httpClientFactory = httpClientFactory;
-            _logger = logger;
-            _settings = settings.Value;
-        }
-
-        public HttpClient CreateClient(string name = "resilient-client")
-        {
-            return _httpClientFactory.CreateClient(name);
-        }
-
-        public async Task<T> ExecuteAsync<T>(Func<HttpClient, Task<T>> operation, string operationKey = "http-operation")
-        {
-            var policy = Policy
-                .Handle<HttpRequestException>()
-                .Or<TaskCanceledException>()
-                .Or<TimeoutRejectedException>()
-                .WaitAndRetryAsync(
-                    retryCount: _settings.RetryCount,
-                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    onRetry: (exception, timespan, retryCount, context) =>
-                    {
-                        _logger.LogWarning("Retry {RetryCount} for {OperationKey} in {TimeSpan}ms due to: {Exception}",
-                            retryCount, operationKey, timespan.TotalMilliseconds, exception.Message);
-                    });
-
-            var context = new Context(operationKey);
-            context.Add("logger", _logger);
-
-            using var httpClient = CreateClient();
-            return await policy.ExecuteAsync(async (ctx) => await operation(httpClient), context);
-        }
-    }
-
     public static class PollyContextExtensions
     {
-        public static Microsoft.Extensions.Logging.ILogger? GetLogger(this Context context)
+        private static readonly string LoggerKey = "ILogger";
+
+        public static Context WithLogger(this Context context, ILogger logger)
         {
-            return context.TryGetValue("logger", out var logger) ? logger as Microsoft.Extensions.Logging.ILogger : null;
+            context[LoggerKey] = logger;
+            return context;
+        }
+
+        public static ILogger? GetLogger(this Context context)
+        {
+            if (context.TryGetValue(LoggerKey, out var loggerObject) && loggerObject is ILogger logger)
+            {
+                return logger;
+            }
+            return null;
         }
     }
 }

@@ -1,14 +1,21 @@
+using BuildingBlocks.Messaging.Events.Base;
+
 namespace BuildingBlocks.Messaging.Abstractions
 {
-     public interface IEventBus
+    /// <summary>
+    /// [اصلاح شد] اینترفیس اصلی برای انتشار رویدادهای یکپارچه‌سازی (Integration Events).
+    /// این اینترفیس توسط سرویس‌ها برای ارتباط غیرهمگام با یکدیگر استفاده می‌شود.
+    /// </summary>
+    public interface IEventBus
     {
-        Task PublishAsync<T>(T @event, CancellationToken cancellationToken = default) where T : BaseEvent;
-        Task PublishAsync<T>(IEnumerable<T> events, CancellationToken cancellationToken = default) where T : BaseEvent;
-    }
+        /// <summary>
+        /// Publishes a single event to the message bus.
+        /// </summary>
+        Task PublishAsync<T>(T @event, CancellationToken cancellationToken = default) where T : IntegrationEvent;
 
-    public interface IIntegrationEventHandler<in TIntegrationEvent> 
-        where TIntegrationEvent : IIntegrationEvent
-    {
-        Task Handle(TIntegrationEvent @event, CancellationToken cancellationToken = default);
+        /// <summary>
+        /// Publishes a collection of events to the message bus.
+        /// </summary>
+        Task PublishAsync<T>(IEnumerable<T> events, CancellationToken cancellationToken = default) where T : IntegrationEvent;
     }
 }

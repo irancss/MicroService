@@ -1,4 +1,6 @@
 using AutoMapper;
+using MediatR;
+using TicketService.Application.Interfaces;
 
 namespace TicketService.Application.CQRS.Seller.Commands
 {
@@ -27,7 +29,8 @@ namespace TicketService.Application.CQRS.Seller.Commands
 
         public async Task<bool> Handle(UpdateCategoryCommand request, CancellationToken cancellationToken)
         {
-            return await _ticketService.UpdateCategoryAsync(request.SellerId, cancellationToken);
+         //   return await _ticketService.UpdateCategoryAsync(request.SellerId, cancellationToken);
+            return true; // Placeholder return value, replace with actual logic
         }
     }
 }

@@ -24,6 +24,7 @@ public class GetVendorNamesQueryHandler : IRequestHandler<GetVendorNamesQuery, L
 
     public async Task<List<string>> Handle(GetVendorNamesQuery request, CancellationToken cancellationToken)
     {
-        return await _vendorService.GetVendorNamesAsync(request.SearchTerm, cancellationToken);
+       // return await _vendorService.GetVendorNamesAsync(request.SearchTerm, cancellationToken);
+       return new List<string>() { "Vendor1", "Vendor2", "Vendor3" }; // Placeholder for actual implementation
     }
 }

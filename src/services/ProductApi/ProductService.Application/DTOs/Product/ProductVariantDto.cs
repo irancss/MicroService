@@ -1,4 +1,5 @@
 
+using BuildingBlocks.Application.Mappings;
 using ProductService.Application.Mappings;
 using ProductService.Domain.Models;
 

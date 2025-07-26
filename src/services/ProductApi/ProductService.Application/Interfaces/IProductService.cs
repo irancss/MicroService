@@ -9,7 +9,7 @@ public interface IProductService
     Task<ProductDto> GetProductByIdAsync(string productId);
     Task<IEnumerable<ProductDto>> GetAllProductsAsync();
     Task<IEnumerable<ProductVariantDto>> GetProductVariantsAsync(string productId);
-    Task AddProductVariantAsync(AddProductVariantCommand command);
-    Task UpdateProductVariantAsync(UpdateProductVariantCommand command);
+    //Task AddProductVariantAsync(AddProductVariantCommand command);
+    //Task UpdateProductVariantAsync(UpdateProductVariantCommand command);
     Task DeleteProductVariantAsync(string variantId);
 }

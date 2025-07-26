@@ -1,13 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
-using OrderService.Core.Models;
+﻿using BuildingBlocks.Application.Data;
+using BuildingBlocks.Messaging.Persistence;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;
+using OrderService.Core.Models;
 
 namespace OrderService.Infrastructure.Data
 {
     /// <summary>
     /// This class is the main database context for managing orders.
     /// </summary>
-    public class OrderDbContext : DbContext
+    public class OrderDbContext : DbContext, IApplicationDbContext
     {
         /// <summary>
         /// Constructor that retrieves the required configurations using DbContextOptions.
@@ -27,6 +29,14 @@ namespace OrderService.Infrastructure.Data
         /// The order items table.
         /// </summary>
         public DbSet<OrderItem> OrderItems { get; set; }
+
+        // پیاده‌سازی نیازمندی‌های اینترفیس
+        public DbSet<OutboxMessage> OutboxMessages { get; set; }
+
+        // [اصلاح شد] پیاده‌سازی پراپرتی جدید از اینترفیس
+        public DbSet<StoredEvent> StoredEvents { get; set; }
+
+
 
         /// <summary>
         /// Configure the model (tables and columns) using Fluent API.

@@ -1,4 +1,5 @@
-﻿using ProductService.Domain.Common;
+﻿using BuildingBlocks.Domain.Entities;
+using BuildingBlocks.Domain.Events;
 using ProductService.Domain.Events;
 using ProductService.Domain.ValueObjects;
 
@@ -6,8 +7,8 @@ namespace ProductService.Domain.Models // Or ProductService.Domain.Models
 {
     public class Product : AuditableEntity
     {
-        private readonly List<DomainEvent> _domainEvents = new List<DomainEvent>();
-        public IReadOnlyCollection<DomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+        private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
+        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
 
         public ProductName Name { get; private set; }
         public string? ProductType { get; set; } // e.g., "Physical", "Digital", "Service"

@@ -26,6 +26,7 @@ public class ChangeVendorStatusCommandHandler : IRequestHandler<ChangeVendorStat
 
     public async Task<bool> Handle(ChangeVendorStatusCommand request, CancellationToken cancellationToken)
     {
-        return await _vendorService.ChangeVendorStatusAsync(request.VendorId, request.IsActive);
+       // return await _vendorService.ChangeVendorStatusAsync(request.VendorId, request.IsActive);
+       return true; // Placeholder for actual implementation
     }
 }

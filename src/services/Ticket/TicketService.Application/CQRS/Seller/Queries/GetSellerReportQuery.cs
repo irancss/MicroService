@@ -1,3 +1,8 @@
+using AutoMapper;
+using MediatR;
+using TicketService.Application.DTOs;
+using TicketService.Application.Interfaces;
+
 namespace TicketService.Application.CQRS.Seller.Queries
 {
 
@@ -19,8 +24,9 @@ namespace TicketService.Application.CQRS.Seller.Queries
 
         public async Task<IEnumerable<TicketDto>> Handle(GetSellerReportQuery request, CancellationToken cancellationToken)
         {
-            return _mapper.Map<IEnumerable<TicketDto>>(
-                await _ticketService.GetTicketsBySellerAsync(request.SellerId, cancellationToken));
+            //return _mapper.Map<IEnumerable<TicketDto>>(
+            //    await _ticketService.GetTicketsBySellerAsync(request.SellerId, cancellationToken));
+            return new List<TicketDto>();
         }
     }
 }

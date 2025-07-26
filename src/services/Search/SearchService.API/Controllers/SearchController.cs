@@ -163,7 +163,7 @@ public class SearchController : ControllerBase
     [ProducesResponseType(typeof(IEnumerable<FacetOption>), 200)]
     [ProducesResponseType(400)]
     [ProducesResponseType(404)]
-    public async Task<ActionResult<IEnumerable<FacetOption>>> GetFacetValues(
+    public ActionResult<IEnumerable<FacetOption>> GetFacetValues(
         [FromRoute] string facetName,
         [FromQuery] string? search = null,
         [FromQuery, Range(1, 100)] int limit = 20)

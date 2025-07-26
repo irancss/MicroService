@@ -27,6 +27,7 @@ public class LandingPagesController : ControllerBase
             request.Content,
             request.MetaDescription,
             request.MetaKeywords,
+            "", // Assuming CustomCss and CustomJs are optional, you can pass empty strings if not provided
             request.CustomCss,
             request.CustomJs);
 

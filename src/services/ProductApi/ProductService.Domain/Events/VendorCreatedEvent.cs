@@ -1,8 +1,10 @@
-﻿using ProductService.Domain.Common;
+﻿
+
+using BuildingBlocks.Messaging.Events.Base;
 
 namespace ProductService.Domain.Events
 {
-    public class VendorCreatedEvent : BaseEvent
+    public record VendorCreatedEvent : IntegrationEvent
     {
         public string VendorId { get; }
         public string VendorName { get; }

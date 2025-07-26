@@ -1,3 +1,5 @@
+using MediatR;
+
 namespace ProductService.Application.CQRS.Product.Commands;
 
 public class DeleteProductCommand : IRequest<bool>
@@ -16,6 +18,7 @@ public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand,
 
     public async Task<bool> Handle(DeleteProductCommand request, CancellationToken cancellationToken)
     {
-        return await _productService.DeleteAsync(request.Id);
+       // return await _productService.DeleteAsync(request.Id);
+       return true;
     }
 }

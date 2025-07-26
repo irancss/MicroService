@@ -1,3 +1,6 @@
+using AutoMapper;
+using VendorService.Domain.Models;
+
 namespace VendorService.Application.Mappings;
 
 public class MappingProfile : Profile

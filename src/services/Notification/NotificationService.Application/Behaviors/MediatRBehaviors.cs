@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using Polly;
-using Polly.Extensions.Http;
+
 
 namespace NotificationService.Application.Behaviors;
 
@@ -31,8 +31,14 @@ public class ResilienceBehavior<TRequest, TResponse> : IPipelineBehavior<TReques
                 sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
-                    _logger.LogWarning("Retry attempt {RetryCount} for {RequestName} after {Delay}ms. Exception: {Exception}",
-                        retryCount, requestName, timespan.TotalMilliseconds, outcome.Exception?.Message);
+                    var requestName = context["RequestName"]?.ToString() ?? "UnknownRequest";
+
+                    _logger.LogWarning(
+                        "Retry attempt {RetryCount} for {RequestName} after {Delay}ms. Exception: {ExceptionMessage}",
+                        retryCount,
+                        requestName,
+                        timespan.TotalMilliseconds,
+                        outcome.InnerException?.Message);
                 });
 
         try

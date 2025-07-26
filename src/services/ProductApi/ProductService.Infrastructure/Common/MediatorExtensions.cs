@@ -1,5 +1,5 @@
-﻿using MassTransit.Mediator;
-using ProductService.Domain.Common;
+﻿using BuildingBlocks.Domain.Entities;
+using MassTransit.Mediator;
 using ProductService.Infrastructure.Data;
 
 namespace ProductService.Infrastructure.Common

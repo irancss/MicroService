@@ -68,6 +68,6 @@ try {
 
 Write-Host "`n=== Test Summary ===" -ForegroundColor Green
 Write-Host "IdentityServer8 is running and the basic endpoints are responding correctly." -ForegroundColor Cyan
-Write-Host "Admin user credentials: Phone = 09123456789, Password = AdminPass123!" -ForegroundColor Cyan
+Write-Host "Admin user credentials: Phone = 09124607630, Password = AdminPass123!" -ForegroundColor Cyan
 Write-Host "Access the admin panel at: $baseUrl/admin" -ForegroundColor Cyan
 Write-Host "API documentation available at: $baseUrl/swagger" -ForegroundColor Cyan

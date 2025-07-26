@@ -21,6 +21,7 @@ public class GetVendorCountQueryHandler : IRequestHandler<GetVendorCountQuery, i
 
     public async Task<int> Handle(GetVendorCountQuery request, CancellationToken cancellationToken)
     {
-        return await _vendorService.GetVendorCountAsync();
+       // return await _vendorService.GetVendorCountAsync();
+       return 1; // Placeholder return value, replace with actual implementation
     }
 }

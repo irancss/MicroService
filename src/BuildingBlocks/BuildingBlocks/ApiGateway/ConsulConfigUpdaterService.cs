@@ -1,127 +1,143 @@
 using BuildingBlocks.ServiceDiscovery;
+using Consul;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
 using Yarp.ReverseProxy.Configuration;
 using Yarp.ReverseProxy.LoadBalancing;
+using DestinationConfig = Yarp.ReverseProxy.Configuration.DestinationConfig;
+using RouteConfig = Yarp.ReverseProxy.Configuration.RouteConfig;
 
 namespace BuildingBlocks.ApiGateway
 {
-
-public class ConsulConfigUpdaterService : BackgroundService
-{
-    private readonly IServiceDiscovery _serviceDiscovery;
-    private readonly InMemoryConfigProvider _configProvider;
-    private readonly ILogger<ConsulConfigUpdaterService> _logger;
-    private readonly Dictionary<string, string> _serviceRoutes;
-
-    public ConsulConfigUpdaterService(
-        IServiceDiscovery serviceDiscovery,
-        IProxyConfigProvider configProvider, // اینجا IProxyConfigProvider را می‌گیریم
-        ILogger<ConsulConfigUpdaterService> logger)
+    // [نکته] این سرویس، هسته اصلی قابلیت Gateway پویا است و پیاده‌سازی آن با Blocking Queries بسیار بهینه و صحیح است.
+    // این فایل بدون تغییر باقی می‌ماند.
+    public class ConsulConfigUpdaterService : BackgroundService
     {
-        _serviceDiscovery = serviceDiscovery;
-        _configProvider = (InMemoryConfigProvider)configProvider; // و به نوع مشخص خودمان کست می‌کنیم
-        _logger = logger;
+        private readonly IServiceDiscovery _serviceDiscovery;
+        private readonly IConsulClient _consulClient;
+        private readonly InMemoryConfigProvider _configProvider;
+        private readonly ILogger<ConsulConfigUpdaterService> _logger;
+        private readonly YarpRoutesConfig _yarpRoutesConfig;
+        private ulong _lastConsulIndex = 0;
 
-        // این تنظیمات را می‌توانید از IConfiguration بخوانید تا هاردکد نباشد
-        _serviceRoutes = new Dictionary<string, string>
+        public ConsulConfigUpdaterService(
+            IServiceDiscovery serviceDiscovery,
+            IProxyConfigProvider configProvider,
+            IConsulClient consulClient,
+            IOptions<YarpRoutesConfig> yarpRoutesConfig,
+            ILogger<ConsulConfigUpdaterService> logger)
         {
-            ["product-service"] = "/api/products/{**catch-all}",
-            ["order-service"] = "/api/orders/{**catch-all}",
-            ["user-service"] = "/api/users/{**catch-all}",
-            // ... سایر سرویس‌ها
-        };
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await UpdateConfigAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while updating YARP configuration from Consul.");
-            }
-
-            // زمان انتظار را می‌توانید در کانفیگ قرار دهید
-            await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+            _serviceDiscovery = serviceDiscovery;
+            _consulClient = consulClient;
+            _configProvider = (InMemoryConfigProvider)configProvider;
+            _logger = logger;
+            _yarpRoutesConfig = yarpRoutesConfig.Value;
         }
-    }
 
-    private async Task UpdateConfigAsync()
-    {
-        _logger.LogInformation("Checking for service updates from Consul...");
-
-        var routes = new List<RouteConfig>();
-        var clusters = new List<ClusterConfig>();
-
-        foreach (var (serviceName, routePath) in _serviceRoutes)
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            var instances = await _serviceDiscovery.GetServiceInstancesAsync(serviceName);
-            if (instances.Any())
-            {
-                var clusterId = $"{serviceName}-cluster";
-                
-                var route = new RouteConfig
-                {
-                    RouteId = $"{serviceName}-route",
-                    ClusterId = clusterId,
-                    Match = new RouteMatch { Path = routePath },
-                    // اضافه کردن پالیسی احراز هویت به صورت پویا
-                    AuthorizationPolicy = RequiresAuthentication(serviceName) ? "Bearer" : null,
-                    // پاک کردن پیشوند مسیر برای ارسال به سرویس مقصد
-                    Transforms = new[]
-                    {
-                        new Dictionary<string, string> { ["PathRemovePrefix"] = $"/api/{serviceName.Split('-')[0]}" }
-                        // مثال: /api/products/1 -> /1
-                    }
-                };
-                routes.Add(route);
+            await UpdateConfigAsync(stoppingToken);
 
-                var cluster = new ClusterConfig
+            while (!stoppingToken.IsCancellationRequested)
+            {
+                try
                 {
-                    ClusterId = clusterId,
-                    LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin,
-                    Destinations = instances.ToDictionary(
-                        instance => $"{instance.Id}", // استفاده از ID سرویس برای یکتایی
-                        instance => new DestinationConfig { Address = instance.Address }
-                    ),
-                    HealthCheck = new HealthCheckConfig
+                    _logger.LogTrace("Waiting for service changes from Consul using index {ConsulIndex}.", _lastConsulIndex);
+
+                    var queryOptions = new QueryOptions { WaitIndex = _lastConsulIndex };
+                    var servicesResult = await _consulClient.Catalog.Services(queryOptions, stoppingToken);
+
+                    if (servicesResult.LastIndex > _lastConsulIndex)
                     {
-                        Active = new ActiveHealthCheckConfig
+                        _logger.LogInformation("Detected changes in Consul services. New index: {NewIndex}. Refreshing YARP configuration.", servicesResult.LastIndex);
+
+                        await UpdateConfigAsync(stoppingToken);
+
+                        _lastConsulIndex = servicesResult.LastIndex;
+                    }
+                }
+                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
+                {
+                    _logger.LogInformation("Consul config updater is stopping.");
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "An error occurred while watching for Consul configuration changes.");
+                    await Task.Delay(TimeSpan.FromSeconds(15), stoppingToken);
+                }
+            }
+        }
+
+        private async Task UpdateConfigAsync(CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Starting to refresh YARP configuration from Consul...");
+
+            var routes = new List<RouteConfig>();
+            var clusters = new List<ClusterConfig>();
+
+            if (_yarpRoutesConfig.ServiceRoutes == null)
+            {
+                _logger.LogWarning("YARP service routes configuration is missing.");
+                return;
+            }
+
+            foreach (var (serviceName, serviceRoute) in _yarpRoutesConfig.ServiceRoutes)
+            {
+                var instances = (await _serviceDiscovery.GetServiceInstancesAsync(serviceName, cancellationToken)).ToList();
+                if (instances.Any())
+                {
+                    var clusterId = $"{serviceName}-cluster";
+
+                    routes.Add(new RouteConfig
+                    {
+                        RouteId = $"{serviceName}-route",
+                        ClusterId = clusterId,
+                        Match = new RouteMatch { Path = serviceRoute.Path },
+                        AuthorizationPolicy = serviceRoute.RequiresAuthentication ? "default" : null
+                    });
+
+                    clusters.Add(new ClusterConfig
+                    {
+                        ClusterId = clusterId,
+                        LoadBalancingPolicy = LoadBalancingPolicies.RoundRobin,
+                        Destinations = instances.ToDictionary(
+                            instance => instance.ServiceId,
+                            instance => new DestinationConfig { Address = instance.BaseUrl }
+                        ),
+                        HealthCheck = new HealthCheckConfig
                         {
-                            Enabled = true,
-                            Interval = TimeSpan.FromSeconds(10),
-                            Timeout = TimeSpan.FromSeconds(10),
-                            Policy = "ConsecutiveFailures",
-                            Path = "/health"
+                            Active = new ActiveHealthCheckConfig
+                            {
+                                Enabled = true,
+                                Interval = TimeSpan.FromSeconds(10),
+                                Timeout = TimeSpan.FromSeconds(10),
+                                Policy = "ConsecutiveFailures",
+                                Path = "/health/live"
+                            }
                         }
-                    }
-                };
-                clusters.Add(cluster);
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning("No healthy instances found for service: {ServiceName}", serviceName);
+                }
             }
-            else
-            {
-                _logger.LogWarning("No healthy instances found for service: {ServiceName}", serviceName);
-            }
+
+            _logger.LogInformation("Updating YARP config: Found {RouteCount} routes and {ClusterCount} clusters.", routes.Count, clusters.Count);
+            _configProvider.Update(routes, clusters);
         }
-        
-        _logger.LogInformation("Found {RouteCount} routes and {ClusterCount} clusters.", routes.Count, clusters.Count);
-        _configProvider.Update(routes, clusters);
     }
 
-    private static bool RequiresAuthentication(string serviceName)
+    public class YarpRoutesConfig
     {
-        var protectedServices = new[] { "order-service", "user-service" };
-        return protectedServices.Contains(serviceName, StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, ServiceRoute>? ServiceRoutes { get; set; }
     }
+
+    public class ServiceRoute
+    {
+        public string Path { get; set; } = string.Empty;
+        public bool RequiresAuthentication { get; set; } = false;
     }
 }

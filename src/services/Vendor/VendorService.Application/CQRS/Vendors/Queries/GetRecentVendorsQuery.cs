@@ -27,7 +27,8 @@ public class GetRecentVendorsQueryHandler : IRequestHandler<GetRecentVendorsQuer
 
     public async Task<List<VendorDto>> Handle(GetRecentVendorsQuery request, CancellationToken cancellationToken)
     {
-        var vendors = await _vendorService.GetRecentVendorsAsync(request.Count);
-        return _mapper.Map<List<VendorDto>>(vendors);
+        //var vendors = await _vendorService.GetRecentVendorsAsync(request.Count);
+        //return _mapper.Map<List<VendorDto>>(vendors);
+        return new List<VendorDto>(); // Placeholder for actual implementation
     }
 }

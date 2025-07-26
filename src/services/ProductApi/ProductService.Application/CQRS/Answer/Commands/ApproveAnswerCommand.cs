@@ -2,13 +2,13 @@
 
 namespace ProductService.Application.CQRS.Answer.Commands
 {
-    public class ApproveAnswerCommand : IRequest
+    public class ApproveAnswerCommand : IRequest<Unit>
     {
         public string QuestionId { get; set; }
         public string AnswerId { get; set; }
     }
 
-    public class ApproveAnswerCommandHandler : IRequestHandler<ApproveAnswerCommand>
+    public class ApproveAnswerCommandHandler : IRequestHandler<ApproveAnswerCommand, Unit>
     {
         public Task<Unit> Handle(ApproveAnswerCommand request, CancellationToken cancellationToken)
         {

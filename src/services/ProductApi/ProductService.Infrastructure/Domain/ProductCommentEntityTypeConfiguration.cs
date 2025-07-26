@@ -1,3 +1,4 @@
+using BuildingBlocks.Infrastructure.Configurations;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ProductService.Infrastructure.Domain

@@ -23,7 +23,9 @@ namespace TicketService.Application
             });
             services.AddScoped<SieveProcessor>();
 
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddAutoMapper(cfg => {
+                cfg.AddMaps(Assembly.GetExecutingAssembly());
+            });
             services.AddMediatR(Assembly.GetExecutingAssembly());
 
             return services;

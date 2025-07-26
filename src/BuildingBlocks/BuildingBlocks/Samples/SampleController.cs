@@ -1,229 +1,115 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Logging;
-using BuildingBlocks.ServiceDiscovery;
-using BuildingBlocks.Messaging;
-using BuildingBlocks.Messaging.Events;
-using BuildingBlocks.ServiceMesh.Http;
-using BuildingBlocks.Resiliency;
-using BuildingBlocks.Observability;
+﻿using BuildingBlocks.Core.Contracts;
 using BuildingBlocks.Identity;
-using MassTransit;
-using System.Diagnostics;
+using BuildingBlocks.Messaging.Abstractions;
+using BuildingBlocks.Messaging.Events.Contracts;
+using BuildingBlocks.Messaging.Events.Domains;
+using BuildingBlocks.ServiceMesh.Http;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Net.Http.Json;
 
 namespace BuildingBlocks.Samples
 {
+    /// <summary>
+    /// [اصلاح شد] یک کنترلر نمونه که استفاده از بلوک‌های سازنده مختلف را نشان می‌دهد.
+    /// این کنترلر برای تست و نمایش قابلیت‌ها مناسب است.
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class SampleController : ControllerBase
     {
-        private readonly IMessageBus _messageBus;
-        private readonly IServiceMeshHttpClient _httpClient;
+        private readonly IEventBus _eventBus;
+        private readonly IServiceMeshHttpClient _serviceMeshClient;
         private readonly ILogger<SampleController> _logger;
+        private readonly ICurrentUserService _currentUser;
 
         public SampleController(
-            IMessageBus messageBus, 
-            IServiceMeshHttpClient httpClient,
-            ILogger<SampleController> logger)
+            IEventBus eventBus,
+            IServiceMeshHttpClient serviceMeshClient, // [اصلاح شد] تزریق IServiceMeshHttpClient
+            ILogger<SampleController> logger,
+            ICurrentUserService currentUser)
         {
-            _messageBus = messageBus;
-            _httpClient = httpClient;
+            _eventBus = eventBus;
+            _serviceMeshClient = serviceMeshClient;
             _logger = logger;
+            _currentUser = currentUser;
         }
 
-        /// <summary>
-        /// Example of publishing an event using MassTransit
-        /// </summary>
         [HttpPost("orders")]
         public async Task<IActionResult> CreateOrder([FromBody] CreateOrderRequest request)
         {
-            _logger.LogInformation("Creating order for customer {CustomerEmail}", request.CustomerEmail);
+            _logger.LogInformation("User {UserId} is creating an order for customer {CustomerEmail}", _currentUser.UserId, request.CustomerEmail);
 
-            // Simulate order creation logic
             var orderId = new Random().Next(1000, 9999);
-
-            // Publish OrderCreatedEvent
             var orderEvent = new OrderCreatedEvent
             {
                 OrderId = orderId,
                 Amount = request.Amount,
                 CustomerEmail = request.CustomerEmail,
-                OrderDate = DateTime.UtcNow
+                Items = request.Items.Select(i => new OrderItemData(i.ProductId, i.Quantity)).ToList()
             };
 
-            await _messageBus.PublishAsync(orderEvent);
+            await _eventBus.PublishAsync(orderEvent);
+            _logger.LogInformation("Order {OrderId} created and OrderCreatedEvent published with CorrelationId {CorrelationId}", orderId, orderEvent.CorrelationId);
 
-            _logger.LogInformation("Order {OrderId} created and event published", orderId);
-
-            return Ok(new { OrderId = orderId, Message = "Order created successfully" });
+            return Ok(new { OrderId = orderId, Message = "Order creation process started." });
         }
 
-        /// <summary>
-        /// Example of service-to-service communication using Service Mesh
-        /// </summary>
         [HttpGet("products/{id}")]
         public async Task<IActionResult> GetProduct(int id)
         {
-            _logger.LogInformation("Fetching product {ProductId} from product service", id);
+            _logger.LogInformation("Fetching product {ProductId} by user {UserId}", id, _currentUser.UserId);
 
-            try
-            {
-                // Call product service through service mesh
-                var product = await _httpClient.GetFromJsonAsync<Product>("product-service", $"/api/products/{id}");
+            // [اصلاح شد] استفاده از ServiceMeshHttpClient که خواناتر و قدرتمندتر است.
+            var product = await _serviceMeshClient.GetFromJsonAsync<Product>("product-service", $"/api/products/{id}");
 
-                if (product == null)
-                {
-                    _logger.LogWarning("Product {ProductId} not found", id);
-                    return NotFound($"Product {id} not found");
-                }
-
-                _logger.LogInformation("Product {ProductId} retrieved successfully", id);
-                return Ok(product);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching product {ProductId}", id);
-                return StatusCode(500, "Error fetching product");
-            }
+            return product == null ? NotFound() : Ok(product);
         }
 
-        /// <summary>
-        /// Example of calling multiple services
-        /// </summary>
-        [HttpGet("order-details/{orderId}")]
-        public async Task<IActionResult> GetOrderDetails(int orderId)
-        {
-            _logger.LogInformation("Fetching order details for {OrderId}", orderId);
-
-            try
-            {
-                // Call multiple services in parallel
-                var orderTask = _httpClient.GetFromJsonAsync<Order>("order-service", $"/api/orders/{orderId}");
-                var customerTask = _httpClient.GetFromJsonAsync<Customer>("customer-service", $"/api/customers/by-order/{orderId}");
-
-                await Task.WhenAll(orderTask, customerTask);
-
-                var order = await orderTask;
-                var customer = await customerTask;
-
-                if (order == null || customer == null)
-                {
-                    return NotFound("Order or customer not found");
-                }
-
-                var orderDetails = new OrderDetails
-                {
-                    Order = order,
-                    Customer = customer
-                };
-
-                return Ok(orderDetails);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error fetching order details for {OrderId}", orderId);
-                return StatusCode(500, "Error fetching order details");
-            }
-        }
-
-        /// <summary>
-        /// Example of sending a command to a specific service
-        /// </summary>
         [HttpPost("payments")]
+        [ProducesResponseType(typeof(PaymentResponse), 200)]
+        [ProducesResponseType(500)]
         public async Task<IActionResult> ProcessPayment([FromBody] ProcessPaymentRequest request)
         {
-            _logger.LogInformation("Processing payment for order {OrderId}", request.OrderId);
+            _logger.LogInformation("Processing payment for order {OrderId} initiated by user {UserId}", request.OrderId, _currentUser.UserId);
 
-            try
+            var response = await _serviceMeshClient.PostAsJsonAsync("payment-service", "/api/payments", request);
+
+            if (!response.IsSuccessStatusCode)
             {
-                // Send payment command to payment service
-                var paymentResponse = await _httpClient.PostAsJsonAsync(
-                    "payment-service", 
-                    "/api/payments/process", 
-                    request);
-
-                if (paymentResponse == null || !paymentResponse.IsSuccessStatusCode)
-                {
-                    return StatusCode(500, "Payment service unavailable");
-                }
-
-                // Publish PaymentProcessedEvent
-                var paymentEvent = new PaymentProcessedEvent
-                {
-                    OrderId = request.OrderId,
-                    Amount = request.Amount,
-                    IsSuccessful = paymentResponse.IsSuccessStatusCode,
-                    PaymentId = Guid.NewGuid().ToString()
-                };
-
-                await _messageBus.PublishAsync(paymentEvent);
-
-                return Ok(paymentResponse);
+                _logger.LogError("Payment service failed for order {OrderId} with status {StatusCode}", request.OrderId, response.StatusCode);
+                return StatusCode((int)response.StatusCode, "Payment processing failed.");
             }
-            catch (Exception ex)
+
+            var paymentResponse = await response.Content.ReadFromJsonAsync<PaymentResponse>();
+            if (paymentResponse == null)
             {
-                _logger.LogError(ex, "Error processing payment for order {OrderId}", request.OrderId);
-                return StatusCode(500, "Error processing payment");
+                return StatusCode(500, "Invalid response from payment service.");
             }
+
+            // [نکته کلیدی] بر اساس پاسخ، رویداد مناسب برای ادامه Saga منتشر می‌شود.
+            if (paymentResponse.IsSuccessful)
+            {
+                await _eventBus.PublishAsync(new PaymentSucceededEvent { OrderId = request.OrderId, PaymentId = paymentResponse.PaymentId });
+                _logger.LogInformation("Payment for order {OrderId} succeeded and PaymentSucceededEvent published.", request.OrderId);
+            }
+            else
+            {
+                await _eventBus.PublishAsync(new PaymentFailedEvent { OrderId = request.OrderId, Reason = paymentResponse.ErrorMessage ?? "Unknown error." });
+                _logger.LogWarning("Payment for order {OrderId} failed and PaymentFailedEvent published. Reason: {Reason}", request.OrderId, paymentResponse.ErrorMessage);
+            }
+
+            return Ok(paymentResponse);
         }
     }
 
-    // DTOs
-    public class CreateOrderRequest
-    {
-        public decimal Amount { get; set; }
-        public string CustomerEmail { get; set; } = string.Empty;
-        public List<OrderItem> Items { get; set; } = new();
-    }
-
-    public class OrderItem
-    {
-        public int ProductId { get; set; }
-        public int Quantity { get; set; }
-        public decimal Price { get; set; }
-    }
-
-    public class ProcessPaymentRequest
-    {
-        public int OrderId { get; set; }
-        public decimal Amount { get; set; }
-        public string PaymentMethod { get; set; } = string.Empty;
-        public string CardNumber { get; set; } = string.Empty;
-    }
-
-    public class PaymentResponse
-    {
-        public string PaymentId { get; set; } = string.Empty;
-        public bool IsSuccessful { get; set; }
-        public string ErrorMessage { get; set; } = string.Empty;
-    }
-
-    public class Product
-    {
-        public int Id { get; set; }
-        public string Name { get; set; } = string.Empty;
-        public decimal Price { get; set; }
-        public string Description { get; set; } = string.Empty;
-    }
-
-    public class Order
-    {
-        public int Id { get; set; }
-        public decimal Amount { get; set; }
-        public DateTime OrderDate { get; set; }
-        public string Status { get; set; } = string.Empty;
-    }
-
-    public class Customer
-    {
-        public int Id { get; set; }
-        public string Email { get; set; } = string.Empty;
-        public string Name { get; set; } = string.Empty;
-    }
-
-    public class OrderDetails
-    {
-        public Order Order { get; set; } = new();
-        public Customer Customer { get; set; } = new();
-    }
+    #region DTOs
+    public record CreateOrderRequest(decimal Amount, string CustomerEmail, List<OrderItem> Items);
+    public record OrderItem(int ProductId, int Quantity);
+    public record ProcessPaymentRequest(int OrderId, decimal Amount, string PaymentMethod, string CardNumber);
+    public record PaymentResponse(string PaymentId, bool IsSuccessful, string? ErrorMessage);
+    public record Product(int Id, string Name, decimal Price, string? Description);
+    #endregion
 }

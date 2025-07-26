@@ -25,7 +25,8 @@ public class GetTicketsBySellerQueryHandler : IRequestHandler<GetTicketsBySeller
 
     public async Task<IEnumerable<TicketDto>> Handle(GetTicketsBySellerQuery request, CancellationToken cancellationToken)
     {
-        return _mapper.Map<IEnumerable<TicketDto>>(
-            await _ticketService.GetTicketsBySellerAsync(request.SellerId, request.status, cancellationToken));
+        //return _mapper.Map<IEnumerable<TicketDto>>(
+          //  await _ticketService.GetTicketsBySellerAsync(request.SellerId, request.status, cancellationToken));
+          return new List<TicketDto>();
     }
 }

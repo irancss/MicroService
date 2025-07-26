@@ -5,7 +5,7 @@ using TicketService.Application.Interfaces;
 
 namespace TicketService.Application.CQRS.Tag.Commands;
 
-public class UpdateTicketRequestCommand : IRequest
+public class UpdateTicketRequestCommand : IRequest<Unit>
 {
     public string Id { get; set; }
     public string Title { get; set; }
@@ -23,7 +23,7 @@ public class UpdateTicketRequestCommand : IRequest
     }
 }
 
-public class UpdateTicketRequestCommandHandler : IRequestHandler<UpdateTicketRequestCommand>
+public class UpdateTicketRequestCommandHandler : IRequestHandler<UpdateTicketRequestCommand, Unit>
 {
     private readonly ITicketService _ticketService;
     private readonly IMapper _mapper;

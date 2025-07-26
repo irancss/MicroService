@@ -1,8 +1,8 @@
 ﻿
 
-using ProductService.Domain.Common;
 using ProductService.Domain.Models;
 using System.ComponentModel.DataAnnotations.Schema;
+using BuildingBlocks.Domain.Entities;
 
 public class Question : AuditableEntity
 {

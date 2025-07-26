@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityServer.Controllers;
 
+#if DEBUG
 [ApiController]
 [Route("api/[controller]")]
 public class LoginDebugController : ControllerBase
@@ -23,7 +24,7 @@ public class LoginDebugController : ControllerBase
     }
 
     [HttpGet("test-login")]
-    public async Task<IActionResult> TestLogin(string phoneNumber = "09123456789", string password = "Admin123!")
+    public async Task<IActionResult> TestLogin(string phoneNumber = "09124607630", string password = "Ji'%w@4o03c|Gc.qKK")
     {
         var result = new
         {
@@ -97,7 +98,7 @@ public class LoginDebugController : ControllerBase
     }
 
     [HttpGet("reset-user")]
-    public async Task<IActionResult> ResetUser(string phoneNumber = "09123456789")
+    public async Task<IActionResult> ResetUser(string phoneNumber = "09124607630")
     {
         try
         {
@@ -123,3 +124,4 @@ public class LoginDebugController : ControllerBase
         }
     }
 }
+#endif

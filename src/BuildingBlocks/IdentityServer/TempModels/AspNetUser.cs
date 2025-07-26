@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace IdentityServer.TempModels;
 
@@ -56,4 +57,35 @@ public partial class AspNetUser
     public bool LockoutEnabled { get; set; }
 
     public int AccessFailedCount { get; set; }
+}
+
+
+public class ForgotPasswordRequest
+{
+    [Required(ErrorMessage = "شماره موبایل الزامی است")]
+    [Phone(ErrorMessage = "فرمت شماره موبایل صحیح نیست")]
+    public string PhoneNumber { get; set; } = "";
+}
+
+public class ResetPasswordRequest
+{
+    [Required(ErrorMessage = "شماره موبایل الزامی است")]
+    public string PhoneNumber { get; set; } = "";
+
+    [Required(ErrorMessage = "کد تایید الزامی است")]
+    [StringLength(6, MinimumLength = 6, ErrorMessage = "کد تایید باید 6 رقم باشد")]
+    public string Code { get; set; } = "";
+
+    [Required(ErrorMessage = "رمز عبور جدید الزامی است")]
+    [DataType(DataType.Password)]
+    [StringLength(100, ErrorMessage = "رمز عبور باید حداقل {2} کاراکتر باشد", MinimumLength = 8)]
+    // می‌توانید Regex هم برای پیچیدگی رمز اضافه کنید
+    public string NewPassword { get; set; } = "";
+}
+
+public class CreateRoleViewModel
+{
+    [Required(ErrorMessage = "نام Role الزامی است")]
+    [Display(Name = "نام Role")]
+    public string RoleName { get; set; }
 }

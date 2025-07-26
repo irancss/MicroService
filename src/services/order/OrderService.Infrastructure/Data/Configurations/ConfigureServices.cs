@@ -2,8 +2,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using OrderService.Domain.Interfaces;
 using OrderService.Infrastructure.Repositories;
-using OrderService.Infrastructure.Services;
 
 namespace OrderService.Infrastructure.Data.Configurations
 {

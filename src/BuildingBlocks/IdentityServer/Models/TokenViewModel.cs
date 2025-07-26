@@ -2,13 +2,13 @@ namespace IdentityServer.Models;
 
 public class TokenViewModel
 {
-    public string? Subject { get; set; }
-    public string? ClientId { get; set; }
-    public string? SessionId { get; set; }
+    public string? Subject { get; set; } // شناسه کاربر
+    public string? ClientId { get; set; } // شناسه کلاینت (مثلاً web.client)
+    public string? SessionId { get; set; } // شناسه Session
     public DateTime CreationTime { get; set; }
     public DateTime? ExpirationTime { get; set; }
-    public string? Type { get; set; }
-    public List<string> Scopes { get; set; } = new();
+    public string? Type { get; set; } // مثلاً refresh_token
+    public List<string> Scopes { get; set; } = new(); // Scopeهای این توکن
     public bool IsActive { get; set; }
 }
 

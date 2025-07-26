@@ -2,12 +2,12 @@
 
 namespace ProductService.Application.CQRS.Answer.Commands
 {
-    public class DeleteAnswerCommand : IRequest
+    public class DeleteAnswerCommand : IRequest<Unit>
     {
         public string QuestionId { get; set; }
         public string AnswerId { get; set; }
     }
-    public class DeleteAnswerCommandHandler : IRequestHandler<DeleteAnswerCommand>
+    public class DeleteAnswerCommandHandler : IRequestHandler<DeleteAnswerCommand, Unit>
     {
         public Task<Unit> Handle(DeleteAnswerCommand request, CancellationToken cancellationToken)
         {

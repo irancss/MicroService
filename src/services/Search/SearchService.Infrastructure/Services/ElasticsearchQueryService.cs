@@ -1,4 +1,4 @@
-using Elastic.Clients.Elasticsearch;
+﻿using Elastic.Clients.Elasticsearch;
 using Elastic.Clients.Elasticsearch.Aggregations;
 using Elastic.Clients.Elasticsearch.QueryDsl;
 using Microsoft.Extensions.Logging;

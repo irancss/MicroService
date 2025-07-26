@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using OrderService.Core.Enums;
 using OrderService.Core.Models;
+using OrderService.Domain.Interfaces;
 using OrderService.Infrastructure.Repositories;
 
 namespace OrderService.Application.Services

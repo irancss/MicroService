@@ -1,8 +1,8 @@
-﻿using ProductService.Domain.Common;
+﻿using BuildingBlocks.Messaging.Events.Base;
 
 namespace ProductService.Domain.Events;
 
-public class VendorDeactivatedEvent : BaseEvent
+public record VendorDeactivatedEvent : IntegrationEvent
 {
     public string VendorId { get; }
     public VendorDeactivatedEvent(string vendorId)

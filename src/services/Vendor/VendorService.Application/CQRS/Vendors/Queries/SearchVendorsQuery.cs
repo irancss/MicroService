@@ -30,7 +30,8 @@ public class SearchVendorsQueryHandler : IRequestHandler<SearchVendorsQuery, IEn
 
     public async Task<IEnumerable<VendorDto>> Handle(SearchVendorsQuery request, CancellationToken cancellationToken)
     {
-        var vendors = await _vendorService.SearchVendorsAsync(request.SearchTerm, request.PageNumber, request.PageSize);
-        return _mapper.Map<IEnumerable<VendorDto>>(vendors);
+        //var vendors = await _vendorService.SearchVendorsAsync(request.SearchTerm, request.PageNumber, request.PageSize);
+        //return _mapper.Map<IEnumerable<VendorDto>>(vendors);
+        return new List<VendorDto>(); // Placeholder for actual implementation
     }
 }

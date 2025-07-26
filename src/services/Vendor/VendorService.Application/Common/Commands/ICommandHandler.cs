@@ -1,3 +1,5 @@
+using MediatR;
+
 namespace VendorService.Application.Common.Commands;
 
   public interface ICommandHandler<in TCommand, TResult> :

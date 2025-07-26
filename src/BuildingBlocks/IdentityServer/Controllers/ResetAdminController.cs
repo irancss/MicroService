@@ -4,27 +4,34 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace IdentityServer.Controllers;
 
+#if DEBUG
 public class ResetAdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly ILogger<ResetAdminController> _logger;
+       private readonly IConfiguration _configuration;
 
-    public ResetAdminController(UserManager<ApplicationUser> userManager, ILogger<ResetAdminController> logger)
+    public ResetAdminController(UserManager<ApplicationUser> userManager, ILogger<ResetAdminController> logger, IConfiguration configuration    )
     {
         _userManager = userManager;
         _logger = logger;
+        _configuration = configuration;
     }
 
     [HttpPost]
     public async Task<IActionResult> ResetAdminPassword()
     {
-        var user = await _userManager.FindByNameAsync("09123456789");
+        var user = await _userManager.FindByNameAsync("09124607630");
         if (user == null)
         {
             return Json(new { success = false, message = "کاربر ادمین یافت نشد" });
         }
 
         // حذف رمز عبور فعلی
+         var newPassword = _configuration["AdminUser:DefaultPassword"];
+         if (string.IsNullOrEmpty(newPassword))
+            return Json(new { success = false, message = "رمز عبور پیش‌فرض در تنظیمات یافت نشد" });
+
         var removeResult = await _userManager.RemovePasswordAsync(user);
         if (!removeResult.Succeeded)
         {
@@ -32,7 +39,7 @@ public class ResetAdminController : Controller
         }
 
         // افزودن رمز عبور جدید
-        var addResult = await _userManager.AddPasswordAsync(user, "Admin123!");
+        var addResult = await _userManager.AddPasswordAsync(user, newPassword);
         if (addResult.Succeeded)
         {
             _logger.LogInformation("رمز عبور ادمین reset شد");
@@ -49,7 +56,7 @@ public class ResetAdminController : Controller
             <html>
             <body>
                 <h2>Reset Admin Password</h2>
-                <button onclick='resetPassword()'>Reset Admin Password to Admin123!</button>
+                <button onclick='resetPassword()'>Reset Admin Password to </button>
                 <div id='result'></div>
                 <script>
                     function resetPassword() {
@@ -65,3 +72,4 @@ public class ResetAdminController : Controller
         ", "text/html");
     }
 }
+#endif

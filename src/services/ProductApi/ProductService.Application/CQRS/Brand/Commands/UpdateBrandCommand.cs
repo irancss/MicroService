@@ -3,7 +3,7 @@ using ProductService.Application.DTOs.Brand;
 
 namespace ProductService.Application.CQRS.Brand.Commands
 {
-    public class UpdateBrandCommand : IRequest
+    public class UpdateBrandCommand : IRequest<Unit>
     {
         public string Id { get; set; }
         public string Name { get; set; }
@@ -14,7 +14,7 @@ namespace ProductService.Application.CQRS.Brand.Commands
         public int DisplayOrder { get; set; }
     }
 
-    public class UpdateBrandCommandHandler : IRequestHandler<UpdateBrandCommand>
+    public class UpdateBrandCommandHandler : IRequestHandler<UpdateBrandCommand , Unit>
     {
         public UpdateBrandCommandHandler()
         {

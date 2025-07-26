@@ -77,7 +77,7 @@ This IdentityServer8 implementation provides a complete microservice for mobile-
 ### Application Status: ✅ RUNNING
 - **URL**: http://localhost:5062
 - **Health Check**: ✅ Healthy
-- **Admin User**: Phone `09123456789`, Password `AdminPass123!`
+- **Admin User**: Phone `09124607630`, Password `AdminPass123!`
 - **Database**: InMemory (for development)
 - **Environment**: Development mode
 

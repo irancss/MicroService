@@ -2,13 +2,13 @@
 
 namespace ProductService.Application.CQRS.Answer.Commands
 {
-    public class UpdateAnswerCommand : IRequest
+    public class UpdateAnswerCommand : IRequest<Unit>
     {
         public string Id { get; set; }
         public string QuestionId { get; set; }
         public string AnswerText { get; set; }
     }
-    public class UpdateAnswerCommandHandler : IRequestHandler<UpdateAnswerCommand>
+    public class UpdateAnswerCommandHandler : IRequestHandler<UpdateAnswerCommand, Unit>
     {
         public Task<Unit> Handle(UpdateAnswerCommand request, CancellationToken cancellationToken)
         {

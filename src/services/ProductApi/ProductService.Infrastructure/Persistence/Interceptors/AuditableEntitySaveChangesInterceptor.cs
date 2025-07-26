@@ -1,8 +1,8 @@
 ﻿using System;
+using BuildingBlocks.Domain.Entities;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
-using ProductService.Domain.Common;
 using ProductService.Infrastructure.Common;
 
 namespace ProductService.Infrastructure.Persistence.Interceptors

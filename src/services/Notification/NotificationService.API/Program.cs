@@ -1,5 +1,6 @@
 using FluentValidation;
 using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 using NotificationService.Application.Behaviors;
 using NotificationService.Infrastructure.Extensions;
 using System.Reflection;
@@ -29,8 +30,11 @@ builder.Services.AddValidatorsFromAssembly(typeof(NotificationService.Applicatio
 
 // Add Health Checks
 builder.Services.AddHealthChecks()
-    .AddMongoDb(builder.Configuration.GetConnectionString("MongoDB")!, name: "mongodb")
-    .AddRabbitMQ(builder.Configuration.GetConnectionString("RabbitMQ") ?? "amqp://guest:guest@localhost:5672", name: "rabbitmq");
+    .AddMongoDb(sp => sp.GetRequiredService<MongoDB.Driver.IMongoClient>(), name: "mongodb")
+    .AddRabbitMQ(
+        builder.Configuration.GetConnectionString("RabbitMQ") ?? "amqp://guest:guest@localhost:5672",
+        name: "rabbitmq"
+    );
 
 // Add Infrastructure
 builder.Services.AddInfrastructure(builder.Configuration);

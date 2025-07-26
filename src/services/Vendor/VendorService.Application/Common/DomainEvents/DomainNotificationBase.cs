@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace VendorService.Application.Common.DomainEvents;
 
   public class DomainNotificationBase<T> : IDomainEventNotification<T>

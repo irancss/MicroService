@@ -1,5 +1,5 @@
-using System;
-using ProductService.Domain.Common;
+
+using BuildingBlocks.Domain.Entities;
 using ProductService.Domain.Models;
 
 public class ScheduledDiscount : AuditableEntity

@@ -1,4 +1,4 @@
-﻿using ProductService.Domain.Common;
+﻿using BuildingBlocks.Domain.Entities;
 
 public class Answer : AuditableEntity
 {

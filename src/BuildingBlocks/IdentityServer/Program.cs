@@ -1,14 +1,9 @@
-using IdentityServer.Data;
-using IdentityServer.Models;
 using IdentityServer.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Serilog;
 using IdentityServer8.EntityFramework.DbContexts;
 using IdentityServer8.EntityFramework.Mappers;
 using System.Security.Cryptography.X509Certificates;
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using BuildingBlocks.ServiceMesh.Configuration;
 using BuildingBlocks.Observability;
 using BuildingBlocks.Resiliency;
 
@@ -63,7 +58,9 @@ builder.Services.ConfigureApplicationCookie(options =>
     
     // Cookie settings for proper authentication
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Force no secure in development
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+    ? CookieSecurePolicy.None
+    : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Lax; // More permissive than None
     options.Cookie.Name = "IdentityServer.Auth";
     options.Cookie.IsEssential = true; // Essential for authentication
@@ -110,16 +107,18 @@ if (builder.Environment.IsDevelopment())
 }
 else
 {
-    // In production, use a real certificate
-    identityServerBuilder.AddDeveloperSigningCredential();
+     // Load from file
+    var certPath = builder.Configuration["IdentityServer:SigningCertificate:Path"];
+    var certPassword = builder.Configuration["IdentityServer:SigningCertificate:Password"];
+    identityServerBuilder.AddSigningCredential(new X509Certificate2(certPath, certPassword));
 }
 
 // Add SMS Service
 builder.Services.AddSingleton<ISmsService, SmsService>();
 
 // Add BuildingBlocks Services
-builder.Services.AddServiceMesh(builder.Configuration);
-builder.Services.AddObservability(builder.Configuration, "IdentityServer");
+//builder.Services.AddServiceMesh(builder.Configuration);
+builder.Services.AddObservability(builder.Configuration);
 builder.Services.AddResiliency(builder.Configuration);
 
 // Add MVC
@@ -150,6 +149,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+    app.MapControllerRoute("debug", "debug/{controller}/{action}");
     app.UseSwagger();
     app.UseSwaggerUI();
 }
@@ -200,7 +200,15 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
         var context = scopedServices.GetRequiredService<IdentityApplicationDbContext>();
         var configContext = scopedServices.GetRequiredService<ConfigurationDbContext>();
         var persistedContext = scopedServices.GetRequiredService<PersistedGrantDbContext>();
+         var configuration = scopedServices.GetRequiredService<IConfiguration>(); 
         
+        var adminPassword = configuration["AdminUser:DefaultPassword"]; // <--- این را اضافه کنید
+        if (string.IsNullOrEmpty(adminPassword))
+        {
+            Log.Error("رمز عبور پیش‌فرض ادمین در تنظیمات یافت نشد. (AdminUser:DefaultPassword)");
+            throw new InvalidOperationException("Default admin password is not set in configuration.");
+        }
+
         // Migrate databases
         await context.Database.MigrateAsync();
         await configContext.Database.MigrateAsync();
@@ -247,14 +255,14 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
         var userManager = scopedServices.GetRequiredService<UserManager<IdentityApplicationUser>>();
         
         // بررسی با username
-        var adminUser = await userManager.FindByNameAsync("09123456789");
+        var adminUser = await userManager.FindByNameAsync("09124607630");
         
         if (adminUser == null)
         {
             adminUser = new IdentityApplicationUser
             {
-                UserName = "09123456789",
-                PhoneNumber = "09123456789",
+                UserName = "09124607630",
+                PhoneNumber = "09124607630",
                 PhoneNumberConfirmed = true,
                 IsMobileVerified = true,
                 IsActive = true,
@@ -266,7 +274,7 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
                 LockoutEnabled = true
             };
             
-            var result = await userManager.CreateAsync(adminUser, "Admin123!");
+            var result = await userManager.CreateAsync(adminUser, adminPassword);
             if (result.Succeeded)
             {
                 Log.Information("کاربر ادمین پیش‌فرض ایجاد شد: {UserId}, {UserName}", adminUser.Id, adminUser.UserName);
@@ -280,7 +288,7 @@ static async Task InitializeDatabaseAsync(IServiceProvider services)
         {
             // بازنشانی رمز عبور کاربر ادمین
             var token = await userManager.GeneratePasswordResetTokenAsync(adminUser);
-            var resetResult = await userManager.ResetPasswordAsync(adminUser, token, "Admin123!");
+            var resetResult = await userManager.ResetPasswordAsync(adminUser, token, adminPassword);
             
             if (resetResult.Succeeded)
             {

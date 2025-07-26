@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using ProductService.Domain.Common; // Required for validation attributes
+using BuildingBlocks.Domain.Entities;
+
 
 // Assuming a namespace based on the file path
 namespace ProductService.Domain.Models

@@ -1,3 +1,7 @@
+using AutoMapper;
+using MediatR;
+using ProductService.Application.DTOs.Product;
+
 namespace ProductService.Application.CQRS.Product.Queries;
  
  public class GetProductByIdQuery : IRequest<ProductDto>
@@ -20,7 +24,15 @@ namespace ProductService.Application.CQRS.Product.Queries;
 
      public async Task<ProductDto> Handle(GetProductByIdQuery request, CancellationToken cancellationToken)
      {
-         var product = await _productService.GetByIdAsync(request.Id);
-         return _mapper.Map<ProductDto>(product);
-     }
+         //var product = await _productService.GetByIdAsync(request.Id);
+         //return _mapper.Map<ProductDto>(product);
+         return new ProductDto
+         {
+             Id = request.Id,
+             Name = "Sample Product",
+             Description = "This is a sample product description.",
+             Price = 99.99m,
+             IsActive = true,
+         }; // Placeholder for actual implementation
+    }
  }

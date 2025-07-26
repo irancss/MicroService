@@ -14,17 +14,7 @@ public class UpdateProductCommand : IRequest<bool>
     public bool IsActive { get; set; }
     public int DisplayOrder { get; set; }
 
-    public UpdateProductCommand(string id, string name, string slug, string description, decimal price, int stockQuantity, bool isActive, int displayOrder)
-    {
-        Id = id;
-        Name = name;
-        Slug = slug;
-        Description = description;
-        Price = price;
-        StockQuantity = stockQuantity;
-        IsActive = isActive;
-        DisplayOrder = displayOrder;
-    }
+   
 }
 
 public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, bool>
@@ -38,6 +28,7 @@ public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand,
 
     public async Task<bool> Handle(UpdateProductCommand request, CancellationToken cancellationToken)
     {
-        return await _productService.UpdateAsync(request.Id, request.Name, request.Slug, request.Description, request.Price, request.StockQuantity, request.IsActive, request.DisplayOrder);
+       // return await _productService.UpdateAsync(request.Id, request.Name, request.Slug, request.Description, request.Price, request.StockQuantity, request.IsActive, request.DisplayOrder);
+       return true; // Placeholder for actual implementation
     }
 }

@@ -101,9 +101,10 @@ builder.Services.AddAuthorization(options =>
 // Add Health Checks
 builder.Services.AddHealthChecks()
     .AddNpgSql(builder.Configuration.GetConnectionString("DefaultConnection") ?? "")
-    .AddMongoDb(builder.Configuration.GetConnectionString("MongoDB") ?? "")
+    .AddMongoDb(sp => sp.GetRequiredService<MongoDB.Driver.IMongoClient>(), name: "mongodb")
     .AddRedis(builder.Configuration.GetConnectionString("Redis") ?? "")
-    .AddRabbitMQ(rabbitConnectionString: $"amqp://{builder.Configuration.GetValue<string>("RabbitMQ:UserName")}:{builder.Configuration.GetValue<string>("RabbitMQ:Password")}@{builder.Configuration.GetValue<string>("RabbitMQ:HostName")}:{builder.Configuration.GetValue<int>("RabbitMQ:Port")}/");
+    .AddRabbitMQ(new Uri(builder.Configuration.GetConnectionString("RabbitMQ") ?? "amqp://guest:guest@localhost:5672"),
+        name: "rabbitmq");
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();

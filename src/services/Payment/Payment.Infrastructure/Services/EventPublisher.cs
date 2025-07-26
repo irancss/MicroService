@@ -1,8 +1,10 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
+using System;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace Payment.Infrastructure.Services;
 
@@ -24,7 +26,7 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
     public RabbitMQEventPublisher(IConfiguration configuration, ILogger<RabbitMQEventPublisher> logger)
     {
         _logger = logger;
-        
+
         var hostName = configuration.GetValue<string>("RabbitMQ:HostName") ?? "localhost";
         var port = configuration.GetValue<int>("RabbitMQ:Port", 5672);
         var userName = configuration.GetValue<string>("RabbitMQ:UserName") ?? "guest";
@@ -40,18 +42,19 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
                 Port = port,
                 UserName = userName,
                 Password = password,
-                VirtualHost = virtualHost
+                VirtualHost = virtualHost,
+                DispatchConsumersAsync = true // افزودن این برای سازگاری بهتر با async consumer ها خوب است
             };
 
             _connection = factory.CreateConnection();
             _channel = _connection.CreateModel();
 
-            // Declare exchange
             _channel.ExchangeDeclare(
                 exchange: _exchangeName,
                 type: ExchangeType.Topic,
                 durable: true,
-                autoDelete: false);
+                autoDelete: false,
+                arguments: null);
 
             _logger.LogInformation("RabbitMQ connection established successfully");
         }
@@ -61,6 +64,7 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
             throw;
         }
     }
+
 
     public async Task PublishAsync<T>(T eventData, string routingKey) where T : class
     {
@@ -73,21 +77,25 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
 
             var body = Encoding.UTF8.GetBytes(message);
 
+            // --- START OF CORRECTION 1 ---
+            // متد CreateBasicProperties تغییری نکرده اما استفاده از آن در BasicPublish تغییر کرده
             var properties = _channel.CreateBasicProperties();
             properties.Persistent = true;
             properties.MessageId = Guid.NewGuid().ToString();
             properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
             properties.Type = typeof(T).Name;
 
+            // نام پارامتر از basicProperties به properties تغییر کرده است
             _channel.BasicPublish(
                 exchange: _exchangeName,
                 routingKey: routingKey,
-                basicProperties: properties,
+               // properties: properties, // <-- اصلاح اصلی اینجاست
                 body: body);
+            // --- END OF CORRECTION 1 ---
 
             _logger.LogDebug("Event published: {EventType}, RoutingKey: {RoutingKey}", typeof(T).Name, routingKey);
-            
-            await Task.CompletedTask;
+
+            await Task.CompletedTask; // این بخش برای یک متد Publisher می‌تواند بهینه شود
         }
         catch (Exception ex)
         {
@@ -145,10 +153,11 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
     {
         try
         {
-            _channel?.Close();
+            // --- START OF CORRECTION 2 ---
+            // متدهای Close() حذف شده‌اند. Dispose() برای بستن و آزادسازی منابع کافی است.
             _channel?.Dispose();
-            _connection?.Close();
             _connection?.Dispose();
+            // --- END OF CORRECTION 2 ---
             _logger.LogInformation("RabbitMQ connection disposed");
         }
         catch (Exception ex)

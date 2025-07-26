@@ -45,15 +45,15 @@ namespace ProductService.Application.Services
             throw new NotImplementedException();
         }
 
-        public async Task AddProductVariantAsync(AddProductVariantCommand command)
-        {
-            throw new NotImplementedException();
-        }
+        //public async Task AddProductVariantAsync(AddProductVariantCommand command)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
-        public async Task UpdateProductVariantAsync(UpdateProductVariantCommand command)
-        {
-            throw new NotImplementedException();
-        }
+        //public async Task UpdateProductVariantAsync(UpdateProductVariantCommand command)
+        //{
+        //    throw new NotImplementedException();
+        //}
 
         public async Task DeleteProductVariantAsync(string variantId)
         {

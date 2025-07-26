@@ -1,3 +1,5 @@
+using MediatR;
+
 namespace VendorService.Application.Common.DomainEvents;
 
 public interface IDomainEventNotification<out TEventType> : IDomainEventNotification

@@ -1,7 +1,14 @@
+using BuildingBlocks.Application.Abstractions;
 using MediatR;
 using Cart.Application.DTOs;
 
 namespace Cart.Application.Queries;
+
+
+public record GetCartByUserIdQuery(string UserId) : IQuery<CartDto?>;
+
+public record GetActiveCartQuery(string CartId) : IQuery<CartDto?>;
+public record GetNextPurchaseCartQuery(string UserId) : IQuery<NextPurchaseCartDto>;
 
 public class GetCartQuery : IRequest<CartDto?>
 {

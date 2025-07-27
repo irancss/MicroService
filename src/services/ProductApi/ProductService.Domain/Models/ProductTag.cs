@@ -2,10 +2,20 @@
 {
     public class ProductTag
     {
-        public string Id { get; set; }
-        public string ProductId { get; set; }
-        public Product Product { get; set; }
-        public string TagId { get; set; }
-        public Tag Tag { get; set; }
+        public Guid ProductId { get; private set; }
+        public Product Product { get; private set; } = null!;
+
+        public Guid TagId { get; private set; }
+        public Tag Tag { get; private set; } = null!;
+
+        // سازنده برای EF Core
+        private ProductTag() { }
+
+        // سازنده عمومی برای ایجاد نمونه جدید
+        public ProductTag(Guid productId, Guid tagId)
+        {
+            ProductId = productId;
+            TagId = tagId;
+        }
     }
 }

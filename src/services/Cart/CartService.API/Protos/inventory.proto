@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package inventory;
+
+service InventoryService {
+  rpc GetCurrentPrice(PriceRequest) returns (PriceResponse);
+  rpc CheckStock(StockRequest) returns (StockResponse);
+}
+
+message PriceRequest {
+  string product_id = 1;
+}
+
+message PriceResponse {
+  string product_id = 1;
+  double price = 2;
+}
+
+message StockRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message StockResponse {
+  string product_id = 1;
+  bool is_in_stock = 2;
+}

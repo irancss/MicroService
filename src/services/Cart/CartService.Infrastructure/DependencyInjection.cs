@@ -1,13 +1,16 @@
+﻿using BuildingBlocks.Infrastructure.Caching;
+using Cart.Application.Interfaces;
+using Cart.Infrastructure.BackgroundJobs;
+using Cart.Infrastructure.Data;
+using Cart.Infrastructure.Repositories;
+using Cart.Infrastructure.Services;
 using Hangfire;
 using Hangfire.PostgreSql;
 using MassTransit;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using StackExchange.Redis;
-using Cart.Application.Interfaces;
-using Cart.Infrastructure.Repositories;
-using Cart.Infrastructure.Services;
-using Cart.Infrastructure.BackgroundJobs;
 
 namespace Cart.Infrastructure;
 
@@ -15,62 +18,31 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Redis Configuration
-        services.AddSingleton<IConnectionMultiplexer>(provider =>
-        {
-            var connectionString = configuration.GetConnectionString("Redis");
-            return ConnectionMultiplexer.Connect(connectionString);
-        });
+        // Redis
+        services.AddSingleton<IConnectionMultiplexer>(_ =>
+            ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
+        services.AddScoped<IDistributedCacheService, RedisCacheService>();
 
-        // Repository Registration
-        services.AddScoped<ICartRepository, RedisCartRepository>();
-        services.AddScoped<ICartConfigurationService, CartConfigurationService>();
+        // PostgreSQL DbContext for NextPurchaseCart
+        services.AddDbContext<CartDbContext>(options =>
+            options.UseNpgsql(configuration.GetConnectionString("Database")));
 
-        // gRPC Clients Configuration
-        services.Configure<GrpcSettings>(configuration.GetSection("GrpcSettings"));
-        services.AddScoped<IInventoryGrpcClient, InventoryGrpcClient>();
-        services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
+        // Repositories
+        services.AddScoped<IActiveCartRepository, ActiveCartRepository>();
+        services.AddScoped<INextPurchaseCartRepository, NextPurchaseCartRepository>();
 
-        // MassTransit Configuration
-        services.AddMassTransit(x =>
-        {
-            x.UsingRabbitMq((context, cfg) =>
-            {
-                var rabbitMqSettings = configuration.GetSection("RabbitMQ");
-                cfg.Host(rabbitMqSettings["Host"], h =>
-                {
-                    h.Username(rabbitMqSettings["Username"]);
-                    h.Password(rabbitMqSettings["Password"]);
-                });
-
-                cfg.ConfigureEndpoints(context);
-            });
-        });
-
-        // Event Publisher
-        services.AddScoped<IEventPublisher, EventPublisher>();
-
-        // Notification Service
+        // Services
+        services.AddScoped<ICartConfigurationService, RedisCartConfigurationService>();
+        // INotificationService از IMessageBus استفاده می‌کند که در Program.cs ثبت می‌شود.
         services.AddScoped<INotificationService, NotificationService>();
 
-        // Hangfire Configuration
-        services.AddHangfire(config =>
-        {
-            var connectionString = configuration.GetConnectionString("Hangfire");
-            config.UsePostgreSqlStorage(connectionString);
-            config.UseSimpleAssemblyNameTypeSerializer();
-            config.UseRecommendedSerializerSettings();
-        });
+        // gRPC Clients (using BuildingBlocks ServiceMesh)
+        services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
+        services.AddScoped<IInventoryGrpcClient, InventoryGrpcClient>();
 
-        services.AddHangfireServer(options =>
-        {
-            options.WorkerCount = Environment.ProcessorCount;
-            options.Queues = new[] { "default", "critical", "normal", "low" };
-        });
-
-        // Background Jobs
-        services.AddScoped<CartAbandonmentJob>();
-        services.AddHostedService<HangfireJobScheduler>();
+        // Background Services (replaces Hangfire)
+        services.AddHostedService<ActiveCartExpirationService>();
+        // services.AddHostedService<AbandonedCartProcessorService>(); // For notifications
 
         return services;
     }

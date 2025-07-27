@@ -1,17 +1,16 @@
-﻿using ProductService.Domain.Models;
+﻿using BuildingBlocks.Abstractions;
+using ProductService.Domain.Models;
 using Sieve.Models;
 
 
 namespace ProductService.Domain.Interfaces
 {
-    public interface IBrandRepository
+    public interface IBrandRepository : IRepositoryAsync<Brand>
     {
-        Task<Brand> GetByIdAsync(string id);
+        Task<Brand?> GetByIdAsync(Guid brandId);
         Task<IEnumerable<Brand>> GetAllAsync();
-        Task<Brand> AddAsync(Brand brand);
-        Task UpdateAsync(Brand brand);
-        Task DeleteAsync(string id);
-        Task<IEnumerable<Brand>> GetPagedAndSortedAsync(SieveModel sieveModel);
+        Task AddAsync(Brand brand);
+        Task DeleteAsync(Brand brand);
     }
 
 }

@@ -1,50 +1,48 @@
+﻿using BuildingBlocks.Domain.ValueObjects;
+
 namespace Cart.Domain.Entities;
 
-public class CartItem
+// CartItem یک ValueObject است زیرا هویت مستقلی ندارد و بر اساس مقادیرش تعریف می‌شود.
+public class CartItem : ValueObject
 {
-    public string ProductId { get; set; } = string.Empty;
-    public string ProductName { get; set; } = string.Empty;
-    public string? ProductImageUrl { get; set; }
-    public int Quantity { get; set; }
-    public decimal PriceAtTimeOfAddition { get; set; }
-    public DateTime AddedUtc { get; set; }
-    public DateTime LastUpdatedUtc { get; set; }
-    public string? VariantId { get; set; }
-    public Dictionary<string, string> Attributes { get; set; } = new();
-
+    public string ProductId { get; private set; }
+    public string ProductName { get; private set; }
+    public int Quantity { get; private set; }
+    public decimal PriceAtTimeOfAddition { get; private set; }
+    public string? ProductImageUrl { get; private set; }
+    public string? VariantId { get; private set; }
+    public DateTime AddedUtc { get; private set; }
     public decimal TotalPrice => PriceAtTimeOfAddition * Quantity;
 
-    public void UpdateQuantity(int newQuantity)
+    private CartItem() { } // For serialization
+
+    public static CartItem Create(string productId, string productName, int quantity, decimal price, string? imageUrl = null, string? variantId = null)
     {
-        if (newQuantity <= 0)
-            throw new ArgumentException("Quantity must be greater than zero");
+        if (string.IsNullOrWhiteSpace(productId)) throw new ArgumentNullException(nameof(productId));
+        if (quantity <= 0) throw new ArgumentException("Quantity must be positive.", nameof(quantity));
+        if (price < 0) throw new ArgumentException("Price cannot be negative.", nameof(price));
 
-        Quantity = newQuantity;
-        LastUpdatedUtc = DateTime.UtcNow;
-    }
-
-    public void UpdatePrice(decimal newPrice)
-    {
-        if (newPrice < 0)
-            throw new ArgumentException("Price cannot be negative");
-
-        PriceAtTimeOfAddition = newPrice;
-        LastUpdatedUtc = DateTime.UtcNow;
-    }
-
-    public CartItem Clone()
-    {
         return new CartItem
         {
-            ProductId = ProductId,
-            ProductName = ProductName,
-            ProductImageUrl = ProductImageUrl,
-            Quantity = Quantity,
-            PriceAtTimeOfAddition = PriceAtTimeOfAddition,
-            AddedUtc = AddedUtc,
-            LastUpdatedUtc = LastUpdatedUtc,
-            VariantId = VariantId,
-            Attributes = new Dictionary<string, string>(Attributes)
+            ProductId = productId,
+            ProductName = productName,
+            Quantity = quantity,
+            PriceAtTimeOfAddition = price,
+            ProductImageUrl = imageUrl,
+            VariantId = variantId,
+            AddedUtc = DateTime.UtcNow
         };
+    }
+
+    public CartItem WithIncreasedQuantity(int quantityToAdd)
+    {
+        var newQuantity = Quantity + quantityToAdd;
+        return Create(ProductId, ProductName, newQuantity, PriceAtTimeOfAddition, ProductImageUrl, VariantId);
+    }
+
+    protected override IEnumerable<object> GetEqualityComponents()
+    {
+        yield return ProductId;
+        yield return VariantId ?? string.Empty;
     }
 }

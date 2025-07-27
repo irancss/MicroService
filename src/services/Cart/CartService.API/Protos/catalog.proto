@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package catalog;
+
+service CatalogService {
+  rpc GetProductInfo(ProductInfoRequest) returns (ProductInfoResponse);
+}
+
+message ProductInfoRequest {
+  string product_id = 1;
+}
+
+message ProductInfoResponse {
+  string id = 1;
+  string name = 2;
+  string image_url = 3;
+  bool is_active = 4;
+}

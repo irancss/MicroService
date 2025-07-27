@@ -6,67 +6,51 @@ using ProductService.Domain.ValueObjects;
 
 namespace ProductService.Infrastructure.Domain
 {
-    public class ProductEntityTypeConfiguration : BaseEntityTypeConfiguration<Product>
+    public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
-        public override void Configure(EntityTypeBuilder<Product> builder)
+        public void Configure(EntityTypeBuilder<Product> builder)
         {
-            base.Configure(builder); // تنظیمات پایه را اعمال می‌کند
+            builder.ToTable("Products");
+            builder.HasKey(p => p.Id);
 
-            builder.Ignore(p => p.DomainEvents);
-
+            // پیکربندی Value Object ها
             builder.Property(p => p.Name)
-                .HasConversion(
-                    productName => productName.Value,
-                    value => ProductName.Create(value)
-                )
-                .HasColumnName("Name")
-                .IsRequired()
-                .HasMaxLength(100);
+                .HasConversion(name => name.Value, value => ProductName.For(value))
+                .HasMaxLength(150)
+                .IsRequired();
 
-            builder.Property(p => p.Description).HasMaxLength(1000);
-            builder.Property(p => p.BasePrice).HasColumnType("decimal(18,2)").IsRequired();
-            builder.Property(p => p.Sku).HasMaxLength(100);
-            builder.HasIndex(p => p.Sku).IsUnique().HasFilter("\"Sku\" IS NOT NULL");
-            builder.Property(p => p.StockQuantity).IsRequired();
-            builder.Property(p => p.Brand).HasMaxLength(100);
-            builder.Property(p => p.Weight).HasColumnType("decimal(18,3)");
+            builder.Property(p => p.Price)
+                .HasConversion(price => price.Value, value => ProductPrice.For(value))
+                .HasColumnType("decimal(18,2)")
+                .IsRequired();
 
-            builder.OwnsOne(p => p.Dimensions, dim =>
-            {
-                dim.Property(d => d.Length).HasColumnType("decimal(18,2)").HasColumnName("DimensionLength");
-                dim.Property(d => d.Width).HasColumnType("decimal(18,2)").HasColumnName("DimensionWidth");
-                dim.Property(d => d.Height).HasColumnType("decimal(18,2)").HasColumnName("DimensionHeight");
-            });
+            builder.Property(p => p.Sku)
+                .HasConversion(sku => sku.Value, value => Sku.For(value))
+                .HasMaxLength(100)
+                .IsRequired();
 
-            builder.Property(p => p.VendorId).HasMaxLength(100);
-            builder.Property(p => p.Manufacturer).HasMaxLength(100);
-            builder.Property(p => p.IsActive).IsRequired();
+            builder.HasIndex(p => p.Sku).IsUnique();
 
             // روابط
-            builder.HasMany(p => p.Questions)
-                .WithOne(q => q.Product)
-                .HasForeignKey(q => q.ProductId)
+            builder.HasOne(p => p.Brand)
+                .WithMany() // یک برند می‌تواند محصولات زیادی داشته باشد
+                .HasForeignKey(p => p.BrandId)
+                .OnDelete(DeleteBehavior.SetNull); // اگر برند حذف شد، محصولات بدون برند شوند
+
+            // رابطه چند به چند با Category
+            builder.HasMany(p => p.ProductCategories)
+                .WithOne(pc => pc.Product)
+                .HasForeignKey(pc => pc.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(p => p.Reviews)
-                .WithOne(r => r.Product)
-                .HasForeignKey(r => r.ProductId)
+            // رابطه چند به چند با Tag
+            builder.HasMany(p => p.ProductTags)
+                .WithOne(pt => pt.Product)
+                .HasForeignKey(pt => pt.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(p => p.Images)
-                .WithOne(pi => pi.Product)
-                .HasForeignKey(pi => pi.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(p => p.Variants)
-                .WithOne(pv => pv.Product)
-                .HasForeignKey(pv => pv.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            builder.HasMany(p => p.ScheduledDiscounts)
-                .WithOne(sd => sd.Product)
-                .HasForeignKey(sd => sd.ProductId)
-                .OnDelete(DeleteBehavior.Cascade);
+            // نادیده گرفتن رویدادهای دامنه
+            builder.Ignore(p => p.DomainEvents);
         }
     }
 }

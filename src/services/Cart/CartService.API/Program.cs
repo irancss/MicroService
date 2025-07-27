@@ -1,156 +1,87 @@
-using Cart.Application;
-using Cart.Infrastructure;
-using Hangfire;
-using Serilog;
-using FluentValidation.AspNetCore;
-using Hangfire.Dashboard;
-using Microsoft.OpenApi.Models;
+using BuildingBlocks.DependencyInjection;
+using BuildingBlocks.Identity;
+using BuildingBlocks.Messaging;
+using BuildingBlocks.Messaging.Abstractions;
+using BuildingBlocks.Messaging.Configuration;
+using BuildingBlocks.Messaging.MassTransit;
+using BuildingBlocks.Observability;
+using BuildingBlocks.ServiceDiscovery;
+using BuildingBlocks.ServiceMesh;
+using Cart.API.Extensions;
+using Cart.Application.Handlers.Commands;
+using Cart.Infrastructure.Data;
+using MassTransit;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog
-builder.Host.UseSerilog((context, config) =>
+// === 1. Add BuildingBlocks Foundational Services ===
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddConsulServiceDiscovery(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddServiceMeshHttpClient(builder.Configuration);
+
+// === 2. Add Infrastructure Services (Database, Redis, etc.) ===
+builder.Services.AddDbContext<CartDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
+
+builder.Services.AddInfrastructureServices(builder.Configuration);
+
+// === 3. Add MediatR & CQRS pipeline behaviors from BuildingBlocks ===
+builder.Services.AddSharedKernel(builder.Configuration, typeof(AddItemToActiveCartHandler).Assembly);
+
+// === 4. Add Messaging (MassTransit & RabbitMQ) ===
+builder.Services.AddMassTransit(config =>
 {
-    config
-        .ReadFrom.Configuration(context.Configuration)
-        .WriteTo.Console()
-        .WriteTo.File("logs/cart-service-.txt", rollingInterval: RollingInterval.Day);
+    // config.AddConsumer<...>(); // Register consumers here
+    config.UsingRabbitMq((context, cfg) =>
+    {
+        var settings = builder.Configuration.GetSection("RabbitMQ").Get<RabbitMqSettings>() ?? new RabbitMqSettings();
+        cfg.Host(settings.Host, settings.VirtualHost, h =>
+        {
+            h.Username(settings.Username);
+            h.Password(settings.Password);
+        });
+        cfg.ConfigureEndpoints(context, new KebabCaseEndpointNameFormatter("cart-service", false));
+    });
 });
+builder.Services.AddScoped<IEventBus, MassTransitEventBus>();
+builder.Services.AddScoped<IMessageBus, MessageBus>();
 
-// Add services to the container
-builder.Services.AddControllers()
-    .AddFluentValidation();
 
-// Add Application and Infrastructure layers
-builder.Services.AddApplication();
-builder.Services.AddInfrastructure(builder.Configuration);
+// === 5. Add Observability ===
+builder.Host.AddSerilogLogging();
+builder.Services.AddObservability(builder.Configuration);
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// === 6. Standard API Services ===
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(options =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "Cart Microservice API", 
-        Version = "v1",
-        Description = "Dual-Cart E-commerce Microservice with Advanced Features",
-        Contact = new OpenApiContact
-        {
-            Name = "Development Team",
-            Email = "dev@company.com"
-        }
-    });
-    
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-
-    // Include XML comments if available
-    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
+    options.SwaggerDoc("v1", new() { Title = "Cart.API", Version = "v1" });
+    // TODO: Add JWT Security Definition for Swagger
 });
 
-// Add CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll", policy =>
-    {
-        policy.AllowAnyOrigin()
-              .AllowAnyMethod()
-              .AllowAnyHeader();
-    });
-});
-
-// Add API versioning
-builder.Services.AddApiVersioning(opt =>
-{
-    opt.DefaultApiVersion = new Microsoft.AspNetCore.Mvc.ApiVersion(1, 0);
-    //opt.AssumeDefaultVersionWhenUnspecified = true;
-    //opt.ApiVersionReader = Microsoft.AspNetCore.Mvc.ApiVersioning.ApiVersionReader.Combine(
-    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.QueryStringApiVersionReader("apiVersion"),
-    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.HeaderApiVersionReader("X-Version"),
-    //    new Microsoft.AspNetCore.Mvc.ApiVersioning.MediaTypeApiVersionReader("ver")
-    //);
-});
-
-builder.Services.AddVersionedApiExplorer(setup =>
-{
-    setup.GroupNameFormat = "'v'VVV";
-    setup.SubstituteApiVersionInUrl = true;
-});
-
-// Add health checks
-builder.Services.AddHealthChecks()
-    .AddCheck("redis", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Redis is healthy"))
-    .AddCheck("hangfire", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Hangfire is healthy"));
-
+// ================= Build The App ===================
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Cart Microservice API V1");
-        c.RoutePrefix = string.Empty; // Serve Swagger UI at the app's root
-    });
+    app.UseSwaggerUI();
 }
-
-// Use Serilog for request logging
-app.UseSerilogRequestLogging();
-
-// Use CORS
-app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
-
-// Use Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire", new DashboardOptions
-{
-    Authorization = new[] { new AllowAllAuthorizationFilter() } // Only for development
-});
-
-app.UseRouting();
-
+app.UseObservability();
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
-// Map health checks
-app.MapHealthChecks("/health");
+// Auto-migrate database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<CartDbContext>();
+    await dbContext.Database.MigrateAsync();
+}
 
 app.Run();
-
-// Allow all authorization filter for Hangfire (development only)
-public class AllowAllAuthorizationFilter : IDashboardAuthorizationFilter
-{
-    public bool Authorize(DashboardContext context)
-    {
-        return true; // In production, implement proper authorization
-    }
-}

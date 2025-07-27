@@ -14,24 +14,13 @@ namespace ProductService.Application
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             
-
-            services.AddScoped<ISieveProcessor, SieveProcessor>();
-            services.Configure<SieveOptions>(options =>
-            {
-                options.CaseSensitive = false;
-                options.DefaultPageSize = 10;
-                options.MaxPageSize = 100;
-                options.ThrowExceptions = true;
-            });
-
-            services.AddScoped<SieveProcessor>();
-
             services.AddScoped<IBrandService , BrandService>();
             //services.AddScoped<IProductService, ProductService>();
             services.AddScoped<IAnswerService , AnswerService>();
             services.AddScoped<IBrandService, BrandService>();
 
             //services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddAutoMapper(Assembly.GetExecutingAssembly());
 
             // Register MediatR services
             services.AddMediatR(Assembly.GetExecutingAssembly());
@@ -39,5 +28,6 @@ namespace ProductService.Application
             
             return services;
         }
+        public class AssemblyReference { }
     }
 }

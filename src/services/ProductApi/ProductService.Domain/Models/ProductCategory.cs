@@ -2,11 +2,19 @@
 
 public class ProductCategory
 {
-    public string ProductId { get; set; }
-    public virtual Product Product { get; set; } = null!;
+    public Guid ProductId { get; private set; }
+    public Product Product { get; private set; } = null!;
 
-    public string CategoryId { get; set; }
-    public virtual Category Category { get; set; } = null!;
+    public Guid CategoryId { get; private set; }
+    public Category Category { get; private set; } = null!;
 
-    // public bool IsFeaturedProductInCategory { get; set; } // Example of additional property
+    // سازنده برای EF Core
+    private ProductCategory() { }
+
+    // سازنده عمومی برای ایجاد نمونه جدید
+    public ProductCategory(Guid productId, Guid categoryId)
+    {
+        ProductId = productId;
+        CategoryId = categoryId;
+    }
 }

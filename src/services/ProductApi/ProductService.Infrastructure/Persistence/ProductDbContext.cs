@@ -1,42 +1,32 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BuildingBlocks.Application.Data;
+using BuildingBlocks.Messaging.Persistence;
+using Microsoft.EntityFrameworkCore;
 using ProductService.Domain.Models;
 using ProductService.Infrastructure.Domain;
 
 namespace ProductService.Infrastructure.Data
 {
-    public class ProductDbContext : DbContext
+    public class ProductDbContext : DbContext, IApplicationDbContext // ارث‌بری از اینترفیس BuildingBlocks
     {
-        public ProductDbContext(DbContextOptions<ProductDbContext> options)
-            : base(options)
-        {
+        public ProductDbContext(DbContextOptions<ProductDbContext> options) : base(options) { }
 
-            
-        }
+        public DbSet<Product> Products => Set<Product>();
+        public DbSet<Category> Categories => Set<Category>();
+        public DbSet<Brand> Brands => Set<Brand>();
+        public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
+        public DbSet<ProductTag> ProductTags => Set<ProductTag>();
+        public DbSet<Tag> Tags => Set<Tag>();
 
-        public DbSet<Product> Products { get; set; }
-        public DbSet<Question> Questions { get; set; }
-        public DbSet<Answer> Answers { get; set; }
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<Brand> Brands { get; set; }
-        public DbSet<ProductCategory> ProductCategories { get; set; }
-        public DbSet<ProductBrand> ProductBrands { get; set; }
-        public DbSet<ProductImage> ProductImages { get; set; }
-        public DbSet<Review> ProductReviews { get; set; }
-        public DbSet<ProductTag> ProductTags { get; set; }
-        public DbSet<Tag> Tags { get; set; }
-        public DbSet<ProductSpecification> ProductSpecifications { get; set; }
-        public DbSet<ProductAttribute> ProductAttributes { get; set; }
-        public DbSet<ProductAttributeValue> ProductAttributeValues { get; set; }
-        public DbSet<ProductVariantImage> ProductVariantImages { get; set; }
-        public DbSet<ProductVariantPrice> ProductVariantPrices { get; set; }
-        public DbSet<ProductVariantStock> ProductVariantStocks { get; set; }
-        public DbSet<ProductComment> ProductComments { get; set; }
+
+        // پیاده‌سازی نیازمندی‌های IApplicationDbContext برای Outbox و Event Store
+        public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
+        public DbSet<StoredEvent> StoredEvents => Set<StoredEvent>();
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductEntityTypeConfiguration).Assembly);
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(AnswerEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(BrandEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(CategoryEntityTypeConfiguration).Assembly);

@@ -1,7 +1,9 @@
+﻿using Ardalis.GuardClauses;
 using System;
 using System.Collections.Generic;
+using BuildingBlocks.Domain.ValueObjects;
 
-namespace ProductService.Domain.ValueObjects 
+namespace ProductService.Domain.ValueObjects
 {
     public class ProductName : ValueObject
     {
@@ -12,17 +14,15 @@ namespace ProductService.Domain.ValueObjects
             Value = value;
         }
 
-        public static ProductName Create(string name)
+        public static ProductName For(string value)
         {
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                throw new ArgumentException("Product name cannot be empty.", nameof(name));
-            }
-            if (name.Length > 100) // Example validation
-            {
-                throw new ArgumentException("Product name cannot be longer than 100 characters.", nameof(name));
-            }
-            return new ProductName(name);
+            Guard.Against.NullOrWhiteSpace(value, nameof(value));
+
+            // [اصلاح شد] استفاده از Guard های صحیح برای طول رشته
+            Guard.Against.MinLength(value, 3, nameof(value));
+            Guard.Against.MaxLength(value, 150, nameof(value));
+
+            return new ProductName(value);
         }
 
         protected override IEnumerable<object> GetEqualityComponents()
@@ -31,57 +31,5 @@ namespace ProductService.Domain.ValueObjects
         }
 
         public static implicit operator string(ProductName name) => name.Value;
-        // public static explicit operator ProductName(string name) => Create(name); // Consider if explicit conversion is better
-    }
-
-    // Base class for Value Objects (place in a common location or ValueObjects folder)
-    public abstract class ValueObject
-    {
-        protected static bool EqualOperator(ValueObject left, ValueObject right)
-        {
-            if (ReferenceEquals(left, null) ^ ReferenceEquals(right, null))
-            {
-                return false;
-            }
-            return ReferenceEquals(left, null) || left.Equals(right);
-        }
-
-        protected static bool NotEqualOperator(ValueObject left, ValueObject right)
-        {
-            return !(EqualOperator(left, right));
-        }
-
-        protected abstract IEnumerable<object> GetEqualityComponents();
-
-        public override bool Equals(object obj)
-        {
-            if (obj == null || obj.GetType() != GetType())
-            {
-                return false;
-            }
-
-            var other = (ValueObject)obj;
-            return GetEqualityComponents().SequenceEqual(other.GetEqualityComponents());
-        }
-
-        public override int GetHashCode()
-        {
-            var hashCode = new HashCode();
-    foreach (var component in GetEqualityComponents())
-    {
-        hashCode.Add(component);
-    }
-    return hashCode.ToHashCode();
-        }
-
-        public static bool operator ==(ValueObject one, ValueObject two)
-        {
-            return EqualOperator(one, two);
-        }
-
-        public static bool operator !=(ValueObject one, ValueObject two)
-        {
-            return NotEqualOperator(one, two);
-        }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System; // For ArgumentNullException
+﻿using System;
+using BuildingBlocks.Domain.ValueObjects; // For ArgumentNullException
 using ProductService.Domain.ValueObjects; // Assuming a base ValueObject class exists
 
 namespace ProductService.Domain.Models

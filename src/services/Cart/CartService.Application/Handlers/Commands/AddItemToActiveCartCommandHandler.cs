@@ -1,253 +1,68 @@
-using MediatR;
-using Microsoft.Extensions.Logging;
+using BuildingBlocks.Application.CQRS.Commands;
+using BuildingBlocks.Messaging.Abstractions;
 using Cart.Application.Commands;
 using Cart.Application.DTOs;
+using Cart.Application.IntegrationEventHandlers;
 using Cart.Application.Interfaces;
+using Cart.Application.Mappers;
 using Cart.Domain.Entities;
-using Cart.Domain.Events;
-using Cart.Domain.Enums;
+using Microsoft.Extensions.Logging;
 
 namespace Cart.Application.Handlers.Commands;
 
-public class AddItemToActiveCartCommandHandler : IRequestHandler<AddItemToActiveCartCommand, CartOperationResult>
+public class AddItemToActiveCartHandler : ICommandHandler<AddItemToActiveCartCommand, CartOperationResultDto>
 {
-    private readonly ICartRepository _cartRepository;
-    private readonly IInventoryGrpcClient _inventoryClient;
+    private readonly IActiveCartRepository _cartRepository;
     private readonly ICatalogGrpcClient _catalogClient;
-    private readonly IEventPublisher _eventPublisher;
-    private readonly ICartConfigurationService _configService;
-    private readonly ILogger<AddItemToActiveCartCommandHandler> _logger;
+    private readonly IInventoryGrpcClient _inventoryClient;
+    private readonly IEventBus _eventBus;
+    private readonly ILogger<AddItemToActiveCartHandler> _logger;
 
-    public AddItemToActiveCartCommandHandler(
-        ICartRepository cartRepository,
-        IInventoryGrpcClient inventoryClient,
+    public AddItemToActiveCartHandler(
+        IActiveCartRepository cartRepository,
         ICatalogGrpcClient catalogClient,
-        IEventPublisher eventPublisher,
-        ICartConfigurationService configService,
-        ILogger<AddItemToActiveCartCommandHandler> logger)
+        IInventoryGrpcClient inventoryClient,
+        IEventBus eventBus,
+        ILogger<AddItemToActiveCartHandler> logger)
     {
         _cartRepository = cartRepository;
-        _inventoryClient = inventoryClient;
         _catalogClient = catalogClient;
-        _eventPublisher = eventPublisher;
-        _configService = configService;
+        _inventoryClient = inventoryClient;
+        _eventBus = eventBus;
         _logger = logger;
     }
 
-    public async Task<CartOperationResult> Handle(AddItemToActiveCartCommand request, CancellationToken cancellationToken)
+    public async Task<CartOperationResultDto> Handle(AddItemToActiveCartCommand request, CancellationToken cancellationToken)
     {
-        try
-        {
-            _logger.LogInformation("Adding item {ProductId} to active cart for user {UserId}", request.ProductId, request.UserId);
+        var productInfo = await _catalogClient.GetProductInfoAsync(request.ProductId, cancellationToken);
+        if (productInfo is null || !productInfo.IsActive)
+            return new CartOperationResultDto(false, "Product not found or is inactive.", null);
 
-            // Validate product exists and get info
-            var productInfo = await _catalogClient.GetProductInfoAsync(request.ProductId);
-            if (productInfo == null || !productInfo.IsActive)
-            {
-                return CartOperationResult.ErrorResult("Product not found or inactive");
-            }
+        var price = await _inventoryClient.GetCurrentPriceAsync(request.ProductId, cancellationToken);
+        if (price is null)
+            return new CartOperationResultDto(false, "Could not retrieve product price.", null);
 
-            // Check stock availability
-            var config = await _configService.GetConfigurationAsync();
-            if (config.RealTimeStockValidationEnabled)
-            {
-                var isInStock = await _inventoryClient.CheckStockAvailabilityAsync(request.ProductId, request.Quantity);
-                if (!isInStock)
-                {
-                    return CartOperationResult.ErrorResult("Insufficient stock");
-                }
-            }
+        if (!await _inventoryClient.CheckStockAvailabilityAsync(request.ProductId, request.Quantity, cancellationToken))
+            return new CartOperationResultDto(false, "Product is out of stock.", null);
 
-            // Get current price
-            var currentPrice = config.RealTimePriceValidationEnabled
-                ? await _inventoryClient.GetCurrentPriceAsync(request.ProductId)
-                : null;
+        var cart = await _cartRepository.GetByIdAsync(request.CartId, cancellationToken)
+                   ?? ActiveCart.Create(request.CartId, request.UserId);
 
-            if (currentPrice == null)
-            {
-                return CartOperationResult.ErrorResult("Unable to retrieve product price");
-            }
+        var newItem = CartItem.Create(request.ProductId, productInfo.Name, request.Quantity, price.Value, productInfo.ImageUrl, request.VariantId);
+        cart.AddItem(newItem);
 
-            // Get or create cart
-            var cart = await GetOrCreateCartAsync(request.UserId, request.GuestId);
-            
-            // Check if this is the first item being added to an empty active cart
-            bool shouldActivateNextPurchase = config.AutoActivateNextPurchaseEnabled && 
-                                            !cart.HasActiveItems() && 
-                                            cart.HasNextPurchaseItems();
+        await _cartRepository.SaveAsync(cart, cancellationToken);
 
-            // Activate next purchase items if conditions are met
-            bool nextPurchaseActivated = false;
-            string? activationMessage = null;
+        _logger.LogInformation("Item {ProductId} added to cart {CartId}", request.ProductId, request.CartId);
 
-            if (shouldActivateNextPurchase)
-            {
-                cart.MoveAllNextPurchaseToActive();
-                nextPurchaseActivated = true;
-                activationMessage = "ما محصولاتی که برای خرید بعدی ذخیره کرده بودید را به سبد خریدتان اضافه کردیم!";
+        var integrationEvent = new ActiveCartUpdatedIntegrationEvent(
+            cart.UserId, cart.Id, cart.TotalItems, cart.TotalPrice,
+            cart.Items.Select(i => new CartItemDetails(i.ProductId, i.Quantity, i.PriceAtTimeOfAddition)).ToList()
+        );
+        await _eventBus.PublishAsync(integrationEvent, cancellationToken);
 
-                // Publish event
-                await _eventPublisher.PublishAsync(new NextPurchaseActivatedEvent
-                {
-                    CartId = cart.Id,
-                    UserId = cart.UserId,
-                    GuestId = cart.GuestId,
-                    ItemsMovedCount = cart.ActiveItems.Count,
-                    TotalValue = cart.GetActiveTotalAmount(),
-                    ProductIds = cart.ActiveItems.Select(i => i.ProductId).ToList()
-                });
-            }
+        await _inventoryClient.ReserveStockAsync(cart.Id, new() { { request.ProductId, request.Quantity } }, cancellationToken);
 
-            // Add or update item in active cart
-            var existingItem = cart.ActiveItems.FirstOrDefault(i => i.ProductId == request.ProductId && i.VariantId == request.VariantId);
-            
-            if (existingItem != null)
-            {
-                existingItem.UpdateQuantity(existingItem.Quantity + request.Quantity);
-                existingItem.UpdatePrice(currentPrice.Value);
-            }
-            else
-            {
-                var newItem = new CartItem
-                {
-                    ProductId = request.ProductId,
-                    ProductName = productInfo.Name,
-                    ProductImageUrl = productInfo.ImageUrl,
-                    Quantity = request.Quantity,
-                    PriceAtTimeOfAddition = currentPrice.Value,
-                    AddedUtc = DateTime.UtcNow,
-                    LastUpdatedUtc = DateTime.UtcNow,
-                    VariantId = request.VariantId,
-                    Attributes = request.Attributes
-                };
-                cart.ActiveItems.Add(newItem);
-            }
-
-            cart.UpdateLastModified();
-            cart.MarkAsActive();
-
-            // Save cart
-            await _cartRepository.SaveAsync(cart);
-
-            // Publish item added event
-            await _eventPublisher.PublishAsync(new ItemAddedToCartEvent
-            {
-                CartId = cart.Id,
-                UserId = cart.UserId,
-                GuestId = cart.GuestId,
-                ProductId = request.ProductId,
-                Quantity = request.Quantity,
-                Price = currentPrice.Value,
-                CartType = CartType.Active
-            });
-
-            // Convert to DTO
-            var cartDto = await ConvertToCartDto(cart, config);
-            
-            return CartOperationResult.SuccessResult(cartDto, nextPurchaseActivated, activationMessage);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error adding item to active cart");
-            return CartOperationResult.ErrorResult("An error occurred while adding item to cart");
-        }
-    }
-
-    private async Task<ShoppingCart> GetOrCreateCartAsync(string? userId, string? guestId)
-    {
-        ShoppingCart? cart = null;
-
-        if (!string.IsNullOrEmpty(userId))
-        {
-            cart = await _cartRepository.GetByUserIdAsync(userId);
-        }
-        else if (!string.IsNullOrEmpty(guestId))
-        {
-            cart = await _cartRepository.GetByGuestIdAsync(guestId);
-        }
-
-        if (cart == null)
-        {
-            cart = new ShoppingCart
-            {
-                Id = Guid.NewGuid().ToString(),
-                UserId = userId,
-                GuestId = guestId,
-                CreatedUtc = DateTime.UtcNow,
-                LastModifiedUtc = DateTime.UtcNow
-            };
-        }
-
-        return cart;
-    }
-
-    private async Task<CartDto> ConvertToCartDto(ShoppingCart cart, Domain.ValueObjects.CartConfiguration config)
-    {
-        var cartDto = new CartDto
-        {
-            Id = cart.Id,
-            UserId = cart.UserId,
-            GuestId = cart.GuestId,
-            CreatedUtc = cart.CreatedUtc,
-            LastModifiedUtc = cart.LastModifiedUtc,
-            ActiveTotalAmount = cart.GetActiveTotalAmount(),
-            NextPurchaseTotalAmount = cart.GetNextPurchaseTotalAmount(),
-            ActiveItemsCount = cart.GetActiveItemsCount(),
-            NextPurchaseItemsCount = cart.GetNextPurchaseItemsCount()
-        };
-
-        // Convert active items
-        cartDto.ActiveItems = await ConvertCartItemsToDto(cart.ActiveItems, config);
-        
-        // Convert next purchase items
-        cartDto.NextPurchaseItems = await ConvertCartItemsToDto(cart.NextPurchaseItems, config);
-
-        return cartDto;
-    }
-
-    private async Task<List<CartItemDto>> ConvertCartItemsToDto(List<CartItem> items, Domain.ValueObjects.CartConfiguration config)
-    {
-        var result = new List<CartItemDto>();
-        
-        if (!items.Any()) return result;
-
-        // Get current prices and stock status if validation is enabled
-        Dictionary<string, decimal>? currentPrices = null;
-        Dictionary<string, bool>? stockStatus = null;
-
-        if (config.RealTimePriceValidationEnabled)
-        {
-            currentPrices = await _inventoryClient.GetMultiplePricesAsync(items.Select(i => i.ProductId).ToList());
-        }
-
-        if (config.RealTimeStockValidationEnabled)
-        {
-            var stockQueries = items.ToDictionary(i => i.ProductId, i => i.Quantity);
-            stockStatus = await _inventoryClient.CheckMultipleStockAvailabilityAsync(stockQueries);
-        }
-
-        foreach (var item in items)
-        {
-            var currentPrice = currentPrices?.GetValueOrDefault(item.ProductId, item.PriceAtTimeOfAddition) ?? item.PriceAtTimeOfAddition;
-            var inStock = stockStatus?.GetValueOrDefault(item.ProductId, true) ?? true;
-
-            result.Add(new CartItemDto
-            {
-                ProductId = item.ProductId,
-                ProductName = item.ProductName,
-                ProductImageUrl = item.ProductImageUrl,
-                Quantity = item.Quantity,
-                PriceAtTimeOfAddition = item.PriceAtTimeOfAddition,
-                CurrentPrice = currentPrice,
-                PriceChanged = Math.Abs(currentPrice - item.PriceAtTimeOfAddition) > 0.01m,
-                InStock = inStock,
-                AddedUtc = item.AddedUtc,
-                LastUpdatedUtc = item.LastUpdatedUtc,
-                VariantId = item.VariantId,
-                Attributes = item.Attributes
-            });
-        }
-
-        return result;
+        return new CartOperationResultDto(true, null, cart.ToDto());
     }
 }

@@ -1,229 +1,133 @@
-﻿using BuildingBlocks.Domain.Entities;
+﻿using Ardalis.GuardClauses;
+using BuildingBlocks.Domain.Entities;
 using BuildingBlocks.Domain.Events;
 using ProductService.Domain.Events;
 using ProductService.Domain.ValueObjects;
+using System;
 
 namespace ProductService.Domain.Models // Or ProductService.Domain.Models
 {
-    public class Product : AuditableEntity
+    public class Product : AggregateRoot
     {
-        private readonly List<IDomainEvent> _domainEvents = new List<IDomainEvent>();
-        public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
-
         public ProductName Name { get; private set; }
-        public string? ProductType { get; set; } // e.g., "Physical", "Digital", "Service"
-
-        public string Description { get; private set; }
-        public decimal BasePrice { get; set; } // Default price if no variants or variants don't override
-        public string Sku { get; private set; } // Consider a SkuValueObject
-        public bool IsFeatured { get; set; } = false;
-
-        private readonly List<string> _categories = new List<string>();
-        public IReadOnlyCollection<string> Categories => _categories.AsReadOnly();
-
-        private readonly List<string> _tags = new List<string>();
-        public IReadOnlyCollection<string> Tags => _tags.AsReadOnly();
-
-        // For Attributes, consider a more strongly-typed approach if possible
-        private readonly Dictionary<string, object> _attributes = new Dictionary<string, object>();
-        public IReadOnlyDictionary<string, object> Attributes => _attributes;
-
-
-        private readonly List<MediaInfo> _media = new List<MediaInfo>();
-        public IReadOnlyCollection<MediaInfo> Media => _media.AsReadOnly();
-
-        public double AverageRating { get; private set; } // Should be calculated
-        public int ReviewCount { get; private set; }    // Should be calculated
-
-        public bool IsActive { get; private set; }
-        public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
-
+        public string? Description { get; private set; }
+        public ProductPrice Price { get; private set; }
+        public Sku Sku { get; private set; }
         public int StockQuantity { get; private set; }
-        public string Brand { get; private set; }
-        // public List<string> Tags { get; private set; } // This was duplicated, ensure one definition
-        public decimal? Weight { get; private set; }
-        public ProductDimensions Dimensions { get; private set; } // Assuming ProductDimensions is a class/struct
-        public string VendorId { get; private set; }
-        public bool IsDeleted { get; private set; }
-        
-        private readonly List<ScheduledDiscount> _scheduledDiscounts = new List<ScheduledDiscount>();
-        public IReadOnlyCollection<ScheduledDiscount> ScheduledDiscounts => _scheduledDiscounts.AsReadOnly();
+        public bool IsActive { get; private set; }
+        public bool IsFeatured { get; private set; }
 
-        public virtual ICollection<ProductBrand> ProductBrands { get; set; } = new List<ProductBrand>();
-        public virtual ICollection<ProductCategory> ProductCategories { get; set; } = new List<ProductCategory>();
-        public virtual ICollection<ProductImage> Images { get; set; } = new List<ProductImage>(); // Images for the base product
-        public virtual ICollection<ProductSpecification> Specifications { get; set; } = new List<ProductSpecification>();
-        public virtual ICollection<ProductVariant> Variants { get; set; } = new List<ProductVariant>();
-        public virtual ICollection<ProductDescriptiveAttribute> DescriptiveAttributes { get; set; } = new List<ProductDescriptiveAttribute>();
-        public List<Review> Reviews { get; set; }
-        public List<Question> Questions { get; set; }
+        // Relationships
+        public Guid? BrandId { get; private set; }
+        public Brand? Brand { get; private set; }
 
-        public string? Manufacturer { get; private set; }
+        private readonly List<ProductCategory> _productCategories = new();
+        public IReadOnlyCollection<ProductCategory> ProductCategories => _productCategories.AsReadOnly();
 
-        public ICollection<ProductTag> ProductTags { get; set; } = new List<ProductTag>();
-        // Private constructor for ORM
+        private readonly List<ProductTag> _productTags = new();
+        public IReadOnlyCollection<ProductTag> ProductTags => _productTags.AsReadOnly();
+
+        // سازنده برای EF Core
         private Product() { }
 
-        public Product(ProductName name, string description, decimal price, string sku, string brand, int initialStock, string? manufacturer = null /* other essential params */)
+        public static Product Create(
+            ProductName name,
+            ProductPrice price,
+            Sku sku,
+            int initialStock,
+            string? description,
+            Guid? brandId)
         {
-            if (price <= 0) throw new ArgumentOutOfRangeException(nameof(price), "Price must be positive.");
-            if (initialStock < 0) throw new ArgumentOutOfRangeException(nameof(initialStock), "Stock quantity cannot be negative.");
-            if (string.IsNullOrWhiteSpace(sku)) throw new ArgumentNullException(nameof(sku));
-            // Add other validations
+            var product = new Product
+            {
+                Name = Guard.Against.Null(name, nameof(name)),
+                Price = Guard.Against.Null(price, nameof(price)),
+                Sku = Guard.Against.Null(sku, nameof(sku)),
+                Description = description,
+                StockQuantity = Guard.Against.Negative(initialStock, nameof(initialStock)),
+                BrandId = brandId,
+                IsActive = true, // محصولات جدید به طور پیش‌فرض فعال هستند
+                IsFeatured = false
+            };
 
-            Name = name;
-            Description = description;
-            BasePrice = price;
-            Sku = sku;
-            Brand = brand;
-            StockQuantity = initialStock;
-            Manufacturer = manufacturer;
+            product.AddDomainEvent(new ProductCreatedDomainEvent(product.Id, product.Name, product.Sku, product.Price, product.StockQuantity));
 
-            IsActive = true;
-            IsDeleted = false;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
-            // Tags = new List<string>(); // _tags is already initialized
-
-            _domainEvents.Add(new ProductCreatedEvent(this)); // Assuming ProductCreatedEvent exists
+            return product;
         }
 
-        public void UpdateDetails(ProductName newName, string newDescription /* other updatable fields */)
+        public void Update(
+            ProductName newName,
+            string? newDescription,
+            ProductPrice newPrice,
+            Guid? newBrandId)
         {
-            Name = newName;
+            Name = Guard.Against.Null(newName, nameof(newName));
             Description = newDescription;
-            // Add validation
-            UpdatedAt = DateTime.UtcNow;
-            // Add ProductUpdatedEvent
-        }
+            Price = Guard.Against.Null(newPrice, nameof(newPrice));
+            BrandId = newBrandId;
 
-        public void UpdatePrice(decimal newPrice)
-        {
-            if (newPrice <= 0) throw new ArgumentOutOfRangeException(nameof(newPrice), "Price must be positive.");
-            BasePrice = newPrice;
-            UpdatedAt = DateTime.UtcNow;
-            // Add ProductPriceChangedEvent
+            // رویداد دامنه برای به‌روزرسانی
+            AddDomainEvent(new ProductUpdatedDomainEvent(this.Id));
         }
-
-        public void AddCategory(string category)
-        {
-            if (string.IsNullOrWhiteSpace(category) || _categories.Contains(category)) return; // Or throw exception
-            _categories.Add(category);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void RemoveCategory(string category)
-        {
-            if (_categories.Remove(category))
-            {
-                UpdatedAt = DateTime.UtcNow;
-            }
-        }
-        
-        public void AddTag(string tag)
-        {
-            if (string.IsNullOrWhiteSpace(tag) || _tags.Contains(tag)) return;
-            _tags.Add(tag);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void RemoveTag(string tag)
-        {
-            if (_tags.Remove(tag))
-            {
-                UpdatedAt = DateTime.UtcNow;
-            }
-        }
-
-        public void AddMedia(MediaInfo mediaInfo)
-        {
-            // Add validation, e.g., prevent duplicates based on URL or an ID if MediaInfo has one
-            _media.Add(mediaInfo);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void RemoveMedia(string mediaUrl) // Or by Id if MediaInfo has one
-        {
-            var mediaToRemove = _media.FirstOrDefault(m => m.Url == mediaUrl);
-            if (mediaToRemove != null)
-            {
-                _media.Remove(mediaToRemove);
-                UpdatedAt = DateTime.UtcNow;
-            }
-        }
-        
-        public void AddScheduledDiscount(ScheduledDiscount discount)
-        {
-            // Add validation (e.g., date ranges, discount value)
-            _scheduledDiscounts.Add(discount);
-            UpdatedAt = DateTime.UtcNow;
-        }
-
-        public void RemoveScheduledDiscount(string discountId) // Assuming ScheduledDiscount has an Id
-        {
-            var discountToRemove = _scheduledDiscounts.FirstOrDefault(d => d.Id == discountId); // Assuming Id property
-            if (discountToRemove != null)
-            {
-                _scheduledDiscounts.Remove(discountToRemove);
-                UpdatedAt = DateTime.UtcNow;
-            }
-        }
-
 
         public void Activate()
         {
-            if (!IsActive)
-            {
-                IsActive = true;
-                UpdatedAt = DateTime.UtcNow;
-                // Add ProductActivatedEvent
-            }
+            if (IsActive) return;
+            IsActive = true;
         }
 
         public void Deactivate()
         {
-            if (IsActive)
+            if (!IsActive) return;
+            IsActive = false;
+        }
+
+        public void UpdateStock(int newQuantity)
+        {
+            int oldQuantity = StockQuantity;
+            StockQuantity = Guard.Against.Negative(newQuantity, nameof(newQuantity));
+
+            // اگر محصول قبلا ناموجود بوده و الان موجود شده، رویداد منتشر کن
+            if (oldQuantity == 0 && newQuantity > 0)
             {
-                IsActive = false;
-                UpdatedAt = DateTime.UtcNow;
-                // Add ProductDeactivatedEvent
+                AddDomainEvent(new ProductBackInStockDomainEvent(this.Id, this.Name));
             }
         }
 
-        public void MarkAsDeleted()
+        public void AddCategory(Guid categoryId)
         {
-            if (!IsDeleted)
+            Guard.Against.Default(categoryId, nameof(categoryId));
+            if (!_productCategories.Any(pc => pc.CategoryId == categoryId))
             {
-                IsDeleted = true;
-                IsActive = false; // Typically, deleted products are also inactive
-                UpdatedAt = DateTime.UtcNow;
-                // Add ProductDeletedEvent
+                _productCategories.Add(new ProductCategory(this.Id, categoryId));
             }
         }
-        
-        // Method to update stock (example)
-        public void AddStock(int quantity)
+
+        public void RemoveCategory(Guid categoryId)
         {
-            if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to add must be positive.");
-            StockQuantity += quantity;
-            UpdatedAt = DateTime.UtcNow;
-            // Add StockUpdatedEvent
+            var productCategory = _productCategories.FirstOrDefault(pc => pc.CategoryId == categoryId);
+            if (productCategory != null)
+            {
+                _productCategories.Remove(productCategory);
+            }
+        }
+        public void UpdatePrice(ProductPrice newPrice)
+        {
+            // اگر قیمت تغییر نکرده، کاری انجام نده
+            if (this.Price == newPrice) return;
+
+            var oldPrice = this.Price;
+            this.Price = Guard.Against.Null(newPrice, nameof(newPrice));
+
+            // رویداد دامنه را برای انتشار بعدی اضافه کن
+            this.AddDomainEvent(new ProductPriceUpdatedDomainEvent(this.Id, newPrice, oldPrice));
         }
 
-        public void RemoveStock(int quantity)
+        public void SetTags(IEnumerable<Guid> tagIds)
         {
-            if (quantity <= 0) throw new ArgumentOutOfRangeException(nameof(quantity), "Quantity to remove must be positive.");
-            if (StockQuantity < quantity) throw new InvalidOperationException("Not enough stock.");
-            StockQuantity -= quantity;
-            UpdatedAt = DateTime.UtcNow;
-            // Add StockUpdatedEvent
-        }
-
-
-        public void ClearDomainEvents()
-        {
-            _domainEvents.Clear();
+            _productTags.Clear();
+            var tagsToAdd = tagIds.Distinct().Select(tagId => new ProductTag(this.Id, tagId));
+            _productTags.AddRange(tagsToAdd);
         }
     }
 }

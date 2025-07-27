@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using StackExchange.Redis;
 using Newtonsoft.Json;
 using Cart.Application.Interfaces;
-using Cart.Domain.ValueObjects;
 
 namespace Cart.Infrastructure.Services;
 
@@ -25,7 +24,7 @@ public class CartConfigurationService : ICartConfigurationService
         };
     }
 
-    public async Task<CartConfiguration> GetConfigurationAsync()
+    public async Task<CartConfiguration> GetConfigurationAsync(CancellationToken cancellationToken = default)
     {
         try
         {
@@ -49,7 +48,7 @@ public class CartConfigurationService : ICartConfigurationService
         }
     }
 
-    public async Task UpdateConfigurationAsync(CartConfiguration configuration)
+    public async Task UpdateConfigurationAsync(CartConfiguration configuration, CancellationToken cancellationToken = default)
     {
         try
         {

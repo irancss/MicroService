@@ -1,138 +1,48 @@
-using MediatR;
-using Microsoft.AspNetCore.Mvc;
 using Cart.Application.Interfaces;
-using Cart.Domain.ValueObjects;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Cart.API.Controllers;
 
 [ApiController]
 [Route("api/v1/admin/cart-config")]
-[Produces("application/json")]
+[Authorize(Roles = "admin")] // Only accessible by users with the 'admin' role
 public class CartConfigurationController : ControllerBase
 {
     private readonly ICartConfigurationService _configService;
     private readonly ILogger<CartConfigurationController> _logger;
 
-    public CartConfigurationController(
-        ICartConfigurationService configService,
-        ILogger<CartConfigurationController> logger)
+    public CartConfigurationController(ICartConfigurationService configService, ILogger<CartConfigurationController> logger)
     {
         _configService = configService;
         _logger = logger;
     }
 
     /// <summary>
-    /// Get current cart configuration settings
+    /// Gets the current global cart configuration.
     /// </summary>
     [HttpGet]
+    [ProducesResponseType(typeof(CartConfiguration), StatusCodes.Status200OK)]
     public async Task<ActionResult<CartConfiguration>> GetConfiguration()
     {
-        try
-        {
-            var config = await _configService.GetConfigurationAsync();
-            return Ok(config);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting cart configuration");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
+        var config = await _configService.GetConfigurationAsync();
+        return Ok(config);
     }
 
     /// <summary>
-    /// Update cart configuration settings
+    /// Updates the global cart configuration.
     /// </summary>
     [HttpPut]
-    public async Task<ActionResult> UpdateConfiguration([FromBody] CartConfiguration configuration)
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> UpdateConfiguration([FromBody] CartConfiguration configuration)
     {
-        try
+        if (!ModelState.IsValid)
         {
-            await _configService.UpdateConfigurationAsync(configuration);
-            _logger.LogInformation("Cart configuration updated successfully");
-            return Ok(new { message = "Configuration updated successfully" });
+            return BadRequest(ModelState);
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating cart configuration");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
+        await _configService.UpdateConfigurationAsync(configuration);
+        _logger.LogInformation("Cart configuration updated by an administrator.");
+        return NoContent();
     }
-
-    /// <summary>
-    /// Enable or disable automatic next-purchase activation
-    /// </summary>
-    [HttpPatch("auto-activate-next-purchase")]
-    public async Task<ActionResult> UpdateAutoActivateNextPurchase([FromBody] UpdateAutoActivateRequest request)
-    {
-        try
-        {
-            var config = await _configService.GetConfigurationAsync();
-            config.AutoActivateNextPurchaseEnabled = request.Enabled;
-            await _configService.UpdateConfigurationAsync(config);
-            
-            _logger.LogInformation("Auto activate next purchase setting updated to {Enabled}", request.Enabled);
-            return Ok(new { message = "Auto activate setting updated successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating auto activate next purchase setting");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
-    }
-
-    /// <summary>
-    /// Update abandonment behavior settings
-    /// </summary>
-    [HttpPatch("abandonment-settings")]
-    public async Task<ActionResult> UpdateAbandonmentSettings([FromBody] UpdateAbandonmentSettingsRequest request)
-    {
-        try
-        {
-            var config = await _configService.GetConfigurationAsync();
-            
-            if (request.ThresholdMinutes.HasValue)
-                config.AbandonmentThresholdMinutes = request.ThresholdMinutes.Value;
-            
-            if (request.EmailEnabled.HasValue)
-                config.AbandonmentEmailEnabled = request.EmailEnabled.Value;
-            
-            if (request.SmsEnabled.HasValue)
-                config.AbandonmentSmsEnabled = request.SmsEnabled.Value;
-            
-            if (request.MaxNotifications.HasValue)
-                config.MaxAbandonmentNotifications = request.MaxNotifications.Value;
-            
-            if (request.NotificationIntervalHours.HasValue)
-                config.AbandonmentNotificationIntervalHours = request.NotificationIntervalHours.Value;
-            
-            if (request.MoveToNextPurchaseDays.HasValue)
-                config.AbandonmentMoveToNextPurchaseDays = request.MoveToNextPurchaseDays.Value;
-
-            await _configService.UpdateConfigurationAsync(config);
-            
-            _logger.LogInformation("Abandonment settings updated successfully");
-            return Ok(new { message = "Abandonment settings updated successfully" });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error updating abandonment settings");
-            return StatusCode(500, new { message = "Internal server error" });
-        }
-    }
-}
-
-// Request DTOs
-public class UpdateAutoActivateRequest
-{
-    public bool Enabled { get; set; }
-}
-
-public class UpdateAbandonmentSettingsRequest
-{
-    public int? ThresholdMinutes { get; set; }
-    public bool? EmailEnabled { get; set; }
-    public bool? SmsEnabled { get; set; }
-    public int? MaxNotifications { get; set; }
-    public int? NotificationIntervalHours { get; set; }
-    public int? MoveToNextPurchaseDays { get; set; }
 }

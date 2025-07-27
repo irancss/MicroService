@@ -1,40 +1,36 @@
 ﻿using BuildingBlocks.Application.Mappings;
+using ProductService.Domain.Models;
 
-namespace ProductService.Application.DTOs.Product
+namespace ProductService.Application.DTOs.Product;
+
+public class ProductDto : IMapFrom<Domain.Models.Product>
 {
-    public class ProductDto : IMapFrom<Domain.Models.Product>
-    {
-        public string Id { get; set; }
-        public string Sku { get; set; }
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public List<string> Categories { get; set; }
-        public decimal Price { get; set; }
-        public decimal? DiscountedPrice { get; set; } // این فیلد توسط فراخوانی Discount Service پر می‌شود
-        public Dictionary<string, object> Attributes { get; set; }
-        public List<MediaInfoDto> Media { get; set; }
-        public double AverageRating { get; set; }
-        public int ReviewCount { get; set; }
-        public bool IsActive { get; set; }
-        public int StockQuantity { get; set; }
-
-        // Optional: Add a constructor for easier initialization
-        public ProductDto()
-        {
-            Categories = new List<string>();
-            Attributes = new Dictionary<string, object>();
-            Media = new List<MediaInfoDto>();
-        }
-    }
-
-    public class MediaInfoDto
-    {
-        public string Id { get; set; }
-        public string Url { get; set; } // آدرس CDN
-        public string MediaType { get; set; }
-        public string AltText { get; set; }
-        public int Order { get; set; }
-    }
-
-    
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? Description { get; set; }
+    public decimal Price { get; set; }
+    public string Sku { get; set; } = string.Empty;
+    public int StockQuantity { get; set; }
+    public bool IsActive { get; set; }
+    public bool IsFeatured { get; set; }
+    public Guid? BrandId { get; set; }
+    public string? BrandName { get; set; } // برای نمایش در UI
+    public List<CategoryDto> Categories { get; set; } = new();
 }
+
+public class CategoryDto : IMapFrom<Category>
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+public class BrandDto : IMapFrom<Domain.Models.Brand>
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+}
+
+// این کلاس برای پاسخ‌های صفحه‌بندی شده استفاده می‌شود و باید در BuildingBlocks باشد.
+// فرض می‌کنم در BuildingBlocks شما چیزی شبیه این وجود دارد:
+// public record PaginatedList<T>(IReadOnlyCollection<T> Items, int TotalCount, int PageNumber, int PageSize);
+// اگر نیست، می‌توانید از PaginatedList قبلی خودتان استفاده کنید.

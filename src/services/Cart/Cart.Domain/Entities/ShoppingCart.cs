@@ -1,99 +1,89 @@
-using System.ComponentModel.DataAnnotations;
+﻿using BuildingBlocks.Domain.Entities;
+using Cart.Domain.Events;
 
 namespace Cart.Domain.Entities;
 
-public class ShoppingCart
+// ShoppingCart اکنون یک Aggregate Root است و از BaseEntity ارث‌بری می‌کند
+public class ShoppingCart : BaseEntity<string>, IAggregateRoot
 {
-    public string Id { get; set; } = string.Empty;
-    public string? UserId { get; set; }
-    public string? GuestId { get; set; }
-    public DateTime CreatedUtc { get; set; }
-    public DateTime LastModifiedUtc { get; set; }
-    public List<CartItem> ActiveItems { get; set; } = new();
-    public List<CartItem> NextPurchaseItems { get; set; } = new();
-    public bool IsAbandoned { get; set; }
-    public DateTime? AbandonedUtc { get; set; }
-    public int AbandonmentNotificationsSent { get; set; }
+    public string UserId { get; private set; }
+    public List<CartItem> Items { get; private set; } = new();
+    public DateTime CreatedUtc { get; private set; }
+    public DateTime LastModifiedUtc { get; private set; }
 
-    public string GetCartKey()
+    private ShoppingCart() { } // For serialization
+
+    public static ShoppingCart Create(string userId)
     {
-        return !string.IsNullOrEmpty(UserId) ? $"cart:user:{UserId}" : $"cart:guest:{GuestId}";
+        if (string.IsNullOrWhiteSpace(userId)) throw new ArgumentNullException(nameof(userId));
+
+        var cart = new ShoppingCart
+        {
+            Id = userId, // The cart ID is the same as the User ID
+            UserId = userId,
+            CreatedUtc = DateTime.UtcNow,
+            LastModifiedUtc = DateTime.UtcNow
+        };
+
+        cart.AddDomainEvent(new ActiveCartCreatedEvent(cart.Id, cart.UserId));
+        return cart;
     }
 
-    public bool IsEmpty()
+    public void AddItem(CartItem newItem)
     {
-        return !ActiveItems.Any() && !NextPurchaseItems.Any();
-    }
+        var existingItem = Items.FirstOrDefault(i => i.Equals(newItem));
 
-    public bool HasActiveItems()
-    {
-        return ActiveItems.Any();
-    }
+        if (existingItem != null)
+        {
+            var updatedItem = existingItem.WithIncreasedQuantity(newItem.Quantity);
+            Items.Remove(existingItem);
+            Items.Add(updatedItem);
+        }
+        else
+        {
+            Items.Add(newItem);
+        }
 
-    public bool HasNextPurchaseItems()
-    {
-        return NextPurchaseItems.Any();
-    }
-
-    public decimal GetActiveTotalAmount()
-    {
-        return ActiveItems.Sum(item => item.PriceAtTimeOfAddition * item.Quantity);
-    }
-
-    public decimal GetNextPurchaseTotalAmount()
-    {
-        return NextPurchaseItems.Sum(item => item.PriceAtTimeOfAddition * item.Quantity);
-    }
-
-    public int GetActiveItemsCount()
-    {
-        return ActiveItems.Sum(item => item.Quantity);
-    }
-
-    public int GetNextPurchaseItemsCount()
-    {
-        return NextPurchaseItems.Sum(item => item.Quantity);
-    }
-
-    public void UpdateLastModified()
-    {
         LastModifiedUtc = DateTime.UtcNow;
+        AddDomainEvent(new ItemAddedToActiveCartEvent(this.Id, this.UserId, newItem.ProductId, newItem.VariantId,newItem.Quantity, newItem.PriceAtTimeOfAddition));
     }
 
-    public void MarkAsAbandoned()
+    public void RemoveItem(string productId, string? variantId)
     {
-        IsAbandoned = true;
-        AbandonedUtc = DateTime.UtcNow;
-    }
+        // Create a temporary CartItem to find the one to remove using ValueObject equality
+        var itemToRemove = CartItem.Create(productId, "temp", 1, 0, variantId: variantId);
 
-    public void MarkAsActive()
-    {
-        IsAbandoned = false;
-        AbandonedUtc = null;
-    }
+        var foundItem = Items.FirstOrDefault(i => i.Equals(itemToRemove));
 
-    public void IncrementAbandonmentNotifications()
-    {
-        AbandonmentNotificationsSent++;
-    }
-
-    public void MoveAllNextPurchaseToActive()
-    {
-        if (NextPurchaseItems.Any())
+        if (foundItem != null)
         {
-            ActiveItems.AddRange(NextPurchaseItems);
-            NextPurchaseItems.Clear();
-            UpdateLastModified();
+            Items.Remove(foundItem);
+            LastModifiedUtc = DateTime.UtcNow;
+            AddDomainEvent(new ItemRemovedFromActiveCartEvent(this.Id, this.UserId, productId, foundItem.VariantId, foundItem.Quantity));
         }
     }
 
-    public void MoveAllActiveToNextPurchase()
+    public void Clear()
     {
-        if (ActiveItems.Any())
+        var itemCount = Items.Count;
+        if (itemCount > 0)
         {
-            NextPurchaseItems.AddRange(ActiveItems);
-            ActiveItems.Clear();
-            UpdateLastModified();
+            Items.Clear();
+            LastModifiedUtc = DateTime.UtcNow;
+            AddDomainEvent(new ActiveCartClearedEvent(this.Id, this.UserId ));
         }
     }
+
+    public void MergeWith(ShoppingCart guestCart)
+    {
+        foreach (var guestItem in guestCart.Items)
+        {
+            this.AddItem(guestItem);
+        }
+        LastModifiedUtc = DateTime.UtcNow;
+        AddDomainEvent(new CartsMergedEvent(this.Id, this.UserId, guestCart.Id));
+    }
+
+    public decimal TotalPrice => Items.Sum(i => i.TotalPrice);
+    public int TotalItems => Items.Sum(i => i.Quantity);
 }

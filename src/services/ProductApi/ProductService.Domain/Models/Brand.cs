@@ -1,16 +1,46 @@
-﻿using BuildingBlocks.Domain.Entities;
+﻿using Ardalis.GuardClauses;
+using BuildingBlocks.Domain.Entities;
+using System;
 
 namespace ProductService.Domain.Models
 {
-    public class Brand : AuditableEntity
+    public class Brand : AggregateRoot // ارث‌بری از AggregateRoot برای قابلیت‌های پایه
     {
-        public string Name { get; set; } = string.Empty;
-        public string? Slug { get; set; } // URL-friendly identifier
-        public string? Description { get; set; }
-        public string? LogoUrl { get; set; }
-        public bool IsActive { get; set; } = true;
-        public int DisplayOrder { get; set; }
+        public string Name { get; private set; }
+        public string? Description { get; private set; }
+        public bool IsActive { get; private set; }
 
-        public virtual ICollection<ProductBrand> ProductBrands { get; set; } = new List<ProductBrand>();
+        // سازنده برای EF Core
+        private Brand() { Name = string.Empty; }
+
+        public static Brand Create(string name, string? description)
+        {
+            var brand = new Brand
+            {
+                Name = Guard.Against.NullOrWhiteSpace(name, nameof(name)),
+                Description = description,
+                IsActive = true
+            };
+
+            // می‌توانیم یک رویداد دامنه BrandCreatedEvent هم اینجا اضافه کنیم
+
+            return brand;
+        }
+
+        public void Update(string newName, string? newDescription)
+        {
+            Name = Guard.Against.NullOrWhiteSpace(newName, nameof(newName));
+            Description = newDescription;
+        }
+
+        public void Activate()
+        {
+            IsActive = true;
+        }
+
+        public void Deactivate()
+        {
+            IsActive = false;
+        }
     }
 }

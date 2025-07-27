@@ -8,15 +8,14 @@ namespace Cart.Infrastructure.Services;
 // نام propertyها باید دقیقاً با نام propertyهای JSON خروجی API هماهنگ باشد.
 file record ProductInfoResponse(string Id, string Name, string? ImageUrl, bool IsActive);
 
-public class CatalogGrpcClient : ICatalogGrpcClient
+public class CatalogHttpClient : ICatalogClient
 {
     private readonly IServiceMeshHttpClient _serviceMeshClient;
-    private readonly ILogger<CatalogGrpcClient> _logger;
-
-    // نام سرویس همانطور که در Consul ثبت شده است.
+    private readonly ILogger<CatalogHttpClient> _logger;
     private const string ServiceName = "catalog-service";
 
-    public CatalogGrpcClient(IServiceMeshHttpClient serviceMeshClient, ILogger<CatalogGrpcClient> logger)
+
+    public CatalogHttpClient(IServiceMeshHttpClient serviceMeshClient, ILogger<CatalogHttpClient> logger)
     {
         _serviceMeshClient = serviceMeshClient;
         _logger = logger;

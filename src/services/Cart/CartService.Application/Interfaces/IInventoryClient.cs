@@ -1,6 +1,6 @@
 namespace Cart.Application.Interfaces;
 
-public interface IInventoryGrpcClient
+public interface IInventoryClient
 {
     Task<decimal?> GetCurrentPriceAsync(string productId, CancellationToken cancellationToken = default);
     Task<bool> CheckStockAvailabilityAsync(string productId, int quantity, CancellationToken cancellationToken = default);

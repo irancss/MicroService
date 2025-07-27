@@ -17,14 +17,14 @@ namespace Cart.Infrastructure.Services
             _messageBus = messageBus;
         }
 
-        public Task SendCartAbandonmentEmailAsync(string userId, ShoppingCart cart, int notificationNumber)
+        public Task SendCartAbandonmentEmailAsync(string userId, ActiveCart cart, int notificationNumber)
         {
             var message = $"Email #{notificationNumber}: Hey! You left {cart.TotalItems} items in your cart. Come back and complete your purchase!";
             var command = new SendNotificationCommand(userId, message, "Email");
             return _messageBus.SendAsync(command);
         }
 
-        public Task SendCartAbandonmentSmsAsync(string userId, ShoppingCart cart, int notificationNumber)
+        public Task SendCartAbandonmentSmsAsync(string userId, ActiveCart cart, int notificationNumber)
         {
             var message = $"SMS #{notificationNumber}: You have items waiting in your cart!";
             var command = new SendNotificationCommand(userId, message, "Sms");

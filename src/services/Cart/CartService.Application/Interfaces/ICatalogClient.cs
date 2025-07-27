@@ -1,6 +1,6 @@
 namespace Cart.Application.Interfaces;
 
-public interface ICatalogGrpcClient
+public interface ICatalogClient
 {
     Task<ProductInfo?> GetProductInfoAsync(string productId, CancellationToken cancellationToken = default);
 }

@@ -12,22 +12,19 @@ namespace Cart.Application.Handlers.Commands;
 public class RemoveItemFromActiveCartHandler : ICommandHandler<RemoveItemFromActiveCartCommand, CartOperationResultDto>
 {
     private readonly IActiveCartRepository _cartRepository;
-    private readonly IEventBus _eventBus;
     private readonly ILogger<RemoveItemFromActiveCartHandler> _logger;
 
     public RemoveItemFromActiveCartHandler(
         IActiveCartRepository cartRepository,
-        IEventBus eventBus,
         ILogger<RemoveItemFromActiveCartHandler> logger)
     {
         _cartRepository = cartRepository;
-        _eventBus = eventBus;
         _logger = logger;
     }
 
     public async Task<CartOperationResultDto> Handle(RemoveItemFromActiveCartCommand request, CancellationToken cancellationToken)
     {
-        var cart = await _cartRepository.GetByIdAsync(request.CartId, cancellationToken);
+          var cart = await _cartRepository.GetByIdAsync(request.CartId, cancellationToken);
         if (cart is null)
         {
             // If cart doesn't exist, it's already "empty", so return success.
@@ -42,22 +39,13 @@ public class RemoveItemFromActiveCartHandler : ICommandHandler<RemoveItemFromAct
             return new CartOperationResultDto(true, "Item was not in the cart.", cart.ToDto());
         }
 
-        cart.RemoveItem(itemToRemove);
+         cart.RemoveItem(itemToRemove); // این متد خودش رویداد دامنه را ایجاد می‌کند
 
         await _cartRepository.SaveAsync(cart, cancellationToken);
-
         _logger.LogInformation("Item {ProductId} removed from cart {CartId}", request.ProductId, request.CartId);
 
-        // Publish an integration event to notify other services (e.g., Inventory to release stock)
-        var integrationEvent = new ActiveCartUpdatedIntegrationEvent(
-            cart.UserId,
-            cart.Id,
-            cart.TotalItems,
-            cart.TotalPrice,
-            cart.Items.Select(i => new CartItemDetails(i.ProductId, i.Quantity, i.PriceAtTimeOfAddition)).ToList()
-        );
-        await _eventBus.PublishAsync(integrationEvent, cancellationToken);
-
+        // فراخوانی مستقیم IEventBus حذف می‌شود
+        
         return new CartOperationResultDto(true, null, cart.ToDto());
     }
 }

@@ -14,24 +14,25 @@ namespace Cart.Domain.Entities
 
         public static ActiveCart Create(string cartId, string? userId = null)
         {
-            if (string.IsNullOrWhiteSpace(cartId))
+           if (string.IsNullOrWhiteSpace(cartId))
                 throw new ArgumentNullException(nameof(cartId));
 
             var cart = new ActiveCart
             {
-                Id = cartId, // CartId can be UserId for logged-in users or a Guid for guests
+                Id = cartId,
                 UserId = userId,
                 CreatedUtc = DateTime.UtcNow,
                 LastModifiedUtc = DateTime.UtcNow
             };
-
-            // Note: Domain events are handled within the aggregate's methods.
+            
+            // تولید رویداد دامنه برای ایجاد سبد
+            cart.AddDomainEvent(new ActiveCartCreatedEvent(cart.Id, cart.UserId));
             return cart;
         }
 
         public void AddItem(CartItem newItem)
         {
-            var existingItem = Items.FirstOrDefault(i => i.Equals(newItem));
+           var existingItem = FindItem(newItem.ProductId, newItem.VariantId);
 
             if (existingItem != null)
             {
@@ -45,23 +46,51 @@ namespace Cart.Domain.Entities
             }
 
             Touch();
+            AddDomainEvent(new ItemAddedToActiveCartEvent(Id, UserId, newItem.ProductId, newItem.VariantId, newItem.Quantity, newItem.PriceAtTimeOfAddition));
         }
 
-        public CartItem? FindItem(string productId, string? variantId)
+         public void UpdateItemQuantity(string productId, string? variantId, int newQuantity)
         {
-            var itemToFind = CartItem.Create(productId, "temp", 1, 0, variantId: variantId);
-            return Items.FirstOrDefault(i => i.Equals(itemToFind));
+            var itemToUpdate = FindItem(productId, variantId);
+            if (itemToUpdate is null)
+            {
+                // آیتم وجود ندارد، کاری انجام نمی‌دهیم یا می‌توان خطا برگرداند.
+                return;
+            }
+
+            if (newQuantity <= 0)
+            {
+                RemoveItem(itemToUpdate);
+                return;
+            }
+
+            var updatedItem = CartItem.Create(
+                itemToUpdate.ProductId, 
+                itemToUpdate.ProductName, 
+                newQuantity, 
+                itemToUpdate.PriceAtTimeOfAddition, 
+                itemToUpdate.ProductImageUrl, 
+                itemToUpdate.VariantId);
+
+            Items.Remove(itemToUpdate);
+            Items.Add(updatedItem);
+
+            Touch();
+            AddDomainEvent(new ItemQuantityUpdatedInActiveCartEvent(Id, UserId, productId, variantId, newQuantity, itemToUpdate.Quantity));
         }
 
-        public void RemoveItem(CartItem item)
+       
+
+        public void RemoveItem(CartItem itemToRemove)
         {
-            if (Items.Remove(item))
+            if (Items.Remove(itemToRemove))
             {
                 Touch();
+                AddDomainEvent(new ItemRemovedFromActiveCartEvent(Id, UserId, itemToRemove.ProductId, itemToRemove.VariantId, itemToRemove.Quantity));
             }
         }
 
-        public void Clear()
+       public void Clear()
         {
             if (Items.Any())
             {
@@ -78,6 +107,12 @@ namespace Cart.Domain.Entities
                 AddItem(guestItem);
             }
             AddDomainEvent(new CartsMergedEvent(Id, UserId!, guestCart.Id));
+        }
+
+         public CartItem? FindItem(string productId, string? variantId)
+        {
+            var itemToFind = CartItem.Create(productId, "temp", 1, 0, variantId: variantId);
+            return Items.FirstOrDefault(i => i.Equals(itemToFind));
         }
 
         public decimal TotalPrice => Items.Sum(i => i.TotalPrice);

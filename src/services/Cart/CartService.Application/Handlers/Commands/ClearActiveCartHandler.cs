@@ -12,13 +12,11 @@ namespace Cart.Application.Handlers.Commands
     public class ClearActiveCartHandler : ICommandHandler<ClearActiveCartCommand, CartOperationResultDto>
     {
         private readonly IActiveCartRepository _cartRepository;
-        private readonly IEventBus _eventBus;
         private readonly ILogger<ClearActiveCartHandler> _logger;
 
-        public ClearActiveCartHandler(IActiveCartRepository cartRepository, IEventBus eventBus, ILogger<ClearActiveCartHandler> logger)
+        public ClearActiveCartHandler(IActiveCartRepository cartRepository, ILogger<ClearActiveCartHandler> logger)
         {
             _cartRepository = cartRepository;
-            _eventBus = eventBus;
             _logger = logger;
         }
 
@@ -37,12 +35,6 @@ namespace Cart.Application.Handlers.Commands
 
             _logger.LogInformation("Cart {CartId} for user {UserId} has been cleared.", request.CartId, request.UserId);
 
-            // انتشار رویداد برای آزاد کردن موجودی تمام آیتم‌ها
-            // ارسال یک سبد خالی به سرویس Inventory اطلاع می‌دهد که تمام رزروها باید لغو شوند.
-            var integrationEvent = new ActiveCartUpdatedIntegrationEvent(
-                cart.UserId, cart.Id, 0, 0, new List<CartItemDetails>()
-            );
-            await _eventBus.PublishAsync(integrationEvent, cancellationToken);
 
             return new CartOperationResultDto(true, null, cart.ToDto());
         }

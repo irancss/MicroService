@@ -1,17 +1,22 @@
-using BuildingBlocks.DependencyInjection;
+﻿using BuildingBlocks.DependencyInjection;
 using BuildingBlocks.Identity;
 using BuildingBlocks.Messaging;
 using BuildingBlocks.Messaging.Abstractions;
 using BuildingBlocks.Messaging.Configuration;
 using BuildingBlocks.Messaging.MassTransit;
+using BuildingBlocks.Messaging.Outbox;
 using BuildingBlocks.Observability;
 using BuildingBlocks.ServiceDiscovery;
 using BuildingBlocks.ServiceMesh;
 using Cart.API.Extensions;
 using Cart.Application.Handlers.Commands;
+using Cart.Infrastructure.BackgroundJobs;
 using Cart.Infrastructure.Data;
+using Hangfire;
+using Hangfire.PostgreSql;
 using MassTransit;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +29,30 @@ builder.Services.AddServiceMeshHttpClient(builder.Configuration);
 // === 2. Add Infrastructure Services (Database, Redis, etc.) ===
 builder.Services.AddDbContext<CartDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Database")));
+
+
+// === اضافه کردن Hangfire ===
+// 1. ثبت سرویس‌های Hangfire
+builder.Services.AddHangfire(config => config
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options =>
+        options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("Database"))
+    ));
+
+// 2. ثبت سرور Hangfire برای پردازش Job ها
+builder.Services.AddHangfireServer();
+
+// 3. ثبت کلاس Job شما در DI Container
+builder.Services.AddScoped<CartJobs>();
+
+
+// [جدید] ثبت UnitOfWork برای CartDbContext
+builder.Services.AddUnitOfWorkAndDbContext<CartDbContext>();
+
+// [جدید] فعال‌سازی پردازشگر Outbox
+builder.Services.AddOutboxMessageProcessor(builder.Configuration);
 
 builder.Services.AddInfrastructureServices(builder.Configuration);
 
@@ -59,7 +88,29 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new() { Title = "Cart.API", Version = "v1" });
-    // TODO: Add JWT Security Definition for Swagger
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        In = ParameterLocation.Header,
+        Description = "Please enter a valid token",
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
+        }
+    });
 });
 
 // ================= Build The App ===================
@@ -75,7 +126,18 @@ app.UseHttpsRedirection();
 app.UseObservability();
 app.UseAuthentication();
 app.UseAuthorization();
+
+
+app.UseHangfireDashboard("/hangfire");
+// این کار باعث می‌شود متد ProcessExpiredCartsAsync هر 5 دقیقه یکبار اجرا شود
+RecurringJob.AddOrUpdate<CartJobs>(
+    "process-expired-carts", // یک شناسه منحصر به فرد برای Job
+    job => job.ProcessExpiredCartsAsync(null!, null!, null!), // پارامترها نادیده گرفته می‌شوند، Hangfire خودش آن‌ها را تزریق می‌کند
+    Cron.MinuteInterval(5) // هر 5 دقیقه
+);
+
 app.MapControllers();
+
 
 // Auto-migrate database on startup
 using (var scope = app.Services.CreateScope())

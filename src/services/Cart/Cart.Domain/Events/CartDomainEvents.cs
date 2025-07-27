@@ -37,6 +37,17 @@ public record ItemRemovedFromActiveCartEvent(
     int RemovedQuantity) : DomainEvent;
 
 
+/// <summary>
+/// Published when an item's quantity is updated in an active cart.
+/// </summary>
+public record ItemQuantityUpdatedInActiveCartEvent(
+    string CartId,
+    string? UserId,
+    string ProductId,
+    string? VariantId,
+    int NewQuantity,
+    int OldQuantity) : DomainEvent;
+
 
 /// <summary>
 /// Published when an active cart is completely emptied.

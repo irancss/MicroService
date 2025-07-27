@@ -23,8 +23,8 @@ namespace Cart.API.Extensions
             services.AddScoped<INotificationService, NotificationService>();
 
             // gRPC Clients
-            services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
-            services.AddScoped<IInventoryGrpcClient, InventoryGrpcClient>();
+            services.AddScoped<ICatalogClient, CatalogHttpClient>();
+            services.AddScoped<IInventoryClient, InventoryHttpClient>();
 
             // (IEventPublisher با IEventBus از BuildingBlocks جایگزین شده و مستقیم تزریق می‌شود)
 

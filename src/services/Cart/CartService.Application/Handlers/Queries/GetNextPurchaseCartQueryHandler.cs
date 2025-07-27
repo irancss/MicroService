@@ -18,14 +18,20 @@ namespace Cart.Application.Handlers.Queries
             _logger = logger;
         }
 
-        public async Task<NextPurchaseCartDto?> Handle(GetNextPurchaseCartQuery request, CancellationToken cancellationToken)
+        public async Task<NextPurchaseCartDto> Handle(GetNextPurchaseCartQuery request, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Handling GetNextPurchaseCartQuery for UserId: {UserId}", request.UserId);
 
             var cart = await _repository.GetByUserIdAsync(request.UserId, cancellationToken);
 
-            // Returns null if not found, or the mapped DTO.
-            return cart?.ToDto();
+            if (cart is null)
+            {
+
+                // یا یک Exception پرتاب کنید یا یک سبد خالی برگردانید.
+                // برگرداندن سبد خالی معمولاً تجربه کاربری بهتری است.
+                return new NextPurchaseCartDto(request.UserId, 0, new List<NextPurchaseItemDto>());
+            }
+            return cart.ToDto();
         }
     }
 }

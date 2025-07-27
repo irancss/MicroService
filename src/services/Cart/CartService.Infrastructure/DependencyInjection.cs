@@ -1,4 +1,5 @@
 ﻿using BuildingBlocks.Infrastructure.Caching;
+using BuildingBlocks.ServiceMesh.Http;
 using Cart.Application.Interfaces;
 using Cart.Infrastructure.BackgroundJobs;
 using Cart.Infrastructure.Data;
@@ -18,32 +19,42 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        // Redis
+        // 1. Redis
         services.AddSingleton<IConnectionMultiplexer>(_ =>
             ConnectionMultiplexer.Connect(configuration.GetConnectionString("Redis")!));
-        services.AddScoped<IDistributedCacheService, RedisCacheService>();
+        services.AddScoped<IDistributedCacheService, RedisCacheService>(); // از BuildingBlocks
 
-        // PostgreSQL DbContext for NextPurchaseCart
+        // 2. PostgreSQL DbContext
         services.AddDbContext<CartDbContext>(options =>
             options.UseNpgsql(configuration.GetConnectionString("Database")));
 
-        // Repositories
+        // 3. Repositories
         services.AddScoped<IActiveCartRepository, ActiveCartRepository>();
         services.AddScoped<INextPurchaseCartRepository, NextPurchaseCartRepository>();
 
-        // Services
+        // 4. Services
         services.AddScoped<ICartConfigurationService, RedisCartConfigurationService>();
-        // INotificationService از IMessageBus استفاده می‌کند که در Program.cs ثبت می‌شود.
         services.AddScoped<INotificationService, NotificationService>();
 
-        // gRPC Clients (using BuildingBlocks ServiceMesh)
-        services.AddScoped<ICatalogGrpcClient, CatalogGrpcClient>();
-        services.AddScoped<IInventoryGrpcClient, InventoryGrpcClient>();
+        // 5. HTTP Clients for inter-service communication
+        // این کلاینت‌ها از IServiceMeshHttpClient (که در Program.cs ثبت شده) استفاده می‌کنند.
+        services.AddScoped<ICatalogClient, CatalogHttpClient>();
+        services.AddScoped<IInventoryClient, InventoryHttpClient>();
 
-        // Background Services (replaces Hangfire)
-        services.AddHostedService<ActiveCartExpirationService>();
-        // services.AddHostedService<AbandonedCartProcessorService>(); // For notifications
+        // 6. Background Job Logic (فقط کلاس منطق، نه سرور Hangfire)
+        services.AddScoped<CartJobs>(); // این کلاس توسط Hangfire در لایه API فراخوانی خواهد شد
 
         return services;
     }
 }
+
+public static class InventoryDefaults
+{
+    public const string Name = "InventoryGrpcClient";
+    public const string ServiceName = "inventory-service"; // نام ثبت شده در Consul
+}
+// public static class CatalogDefaults
+// {
+//     public const string Name = "CatalogGrpcClient";
+//     public const string ServiceName = "catalog-service";
+// }

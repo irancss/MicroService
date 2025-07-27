@@ -14,3 +14,5 @@ namespace Cart.Application.IntegrationEventHandlers
 
     public record CartItemDetails(string ProductId, int Quantity, decimal Price);
 }
+
+// این هندلر به رویداد دامنه گوش می‌دهد

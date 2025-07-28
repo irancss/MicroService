@@ -4,7 +4,7 @@ using CustomerService.Domain.Events;
 using MediatR;
 using Microsoft.Extensions.Logging;
 using BuildingBlocks.Application.CQRS.DomainEvents;
-using BuildingBlocks.Application.Data;
+using BuildingBlocks.Infrastructure.Data;
 
 namespace CustomerService.Application.EventHandlers
 {

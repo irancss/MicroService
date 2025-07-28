@@ -1,5 +1,5 @@
-﻿using BuildingBlocks.Application.Data;
-using BuildingBlocks.Extensions;
+﻿using BuildingBlocks.Extensions;
+using BuildingBlocks.Infrastructure.Data;
 using BuildingBlocks.Messaging.Persistence;
 using CustomerService.Domain.Entities;
 using MediatR;

@@ -12,10 +12,10 @@ namespace BuildingBlocks.Infrastructure.Interceptors
     public class AuditableEntitySaveChangesInterceptor : SaveChangesInterceptor
     {
         private readonly ICurrentUserService _currentUserService;
-        private readonly IDateTime _dateTime;
+        private readonly IDateTimeProvider _dateTime;
 
         public AuditableEntitySaveChangesInterceptor(
-            IDateTime dateTime,
+            IDateTimeProvider dateTime,
             ICurrentUserService currentUserService)
         {
             _dateTime = dateTime;

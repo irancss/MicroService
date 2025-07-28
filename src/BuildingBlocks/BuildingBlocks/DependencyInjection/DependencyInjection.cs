@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
+using BuildingBlocks.CrossCutting.Correlation;
+using BuildingBlocks.Messaging;
 
 namespace BuildingBlocks.DependencyInjection;
 
@@ -19,7 +21,7 @@ public static class DependencyInjection
     public static IServiceCollection AddSharedKernel(this IServiceCollection services, IConfiguration configuration, params Assembly[] assemblies)
     {
         // Core Services
-        services.AddSingleton<IDateTime, DateTimeService>();
+        services.AddSingleton<IDateTimeProvider, SystemDateTimeProvider>();
         services.AddScoped<ICurrentUserService, CurrentUserService>(); // [جدید] ثبت سرویس کاربر جاری
 
         // MediatR
@@ -35,11 +37,27 @@ public static class DependencyInjection
                 cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(TransactionBehavior<,>));
             });
         }
+
+        // Behaviors
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(UnhandledExceptionBehavior<,>));
+        services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+
+
+        // Cross-cutting
+        services.AddScoped<ICurrentUserService, CurrentUserService>();
+        services.AddScoped<IDateTimeProvider, SystemDateTimeProvider>();
+        services.AddScoped<ICorrelationIdProvider, CorrelationIdProvider>();
+
         // [جدید] ثبت تمام Validator ها از اسمبلی‌های داده شده
         if (assemblies.Any())
         {
             services.AddValidatorsFromAssemblies(assemblies, ServiceLifetime.Scoped);
         }
+
+        // Messaging
+        services.AddScoped<IEventPublisher, MassTransitEventPublisher>();
 
         // Interceptors
         services.AddScoped<AuditableEntitySaveChangesInterceptor>();

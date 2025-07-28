@@ -1,5 +1,5 @@
 using System.Text.Json;
-using BuildingBlocks.Application.Data;
+using BuildingBlocks.Infrastructure.Data;
 using BuildingBlocks.Messaging.Abstractions;
 using BuildingBlocks.Messaging.Events.Base;
 using BuildingBlocks.Messaging.Persistence;

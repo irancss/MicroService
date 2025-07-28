@@ -8,9 +8,9 @@ using CustomerService.Infrastructure.Data;
 using CustomerService.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
-using BuildingBlocks.Application.Data;
 using BuildingBlocks.Infrastructure.Interceptors;
 using CustomerService.API.Middlewares;
+using BuildingBlocks.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 var assemblies = new[] { Assembly.GetExecutingAssembly() };

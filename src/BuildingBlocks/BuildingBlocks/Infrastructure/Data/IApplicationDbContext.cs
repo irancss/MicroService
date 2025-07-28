@@ -2,7 +2,7 @@ using BuildingBlocks.Messaging.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 
-namespace BuildingBlocks.Application.Data;
+namespace BuildingBlocks.Infrastructure.Data;
 
 /// <summary>
 /// Represents the application's database context.

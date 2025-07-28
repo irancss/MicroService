@@ -1,4 +1,4 @@
-﻿using BuildingBlocks.Application.Data;
+﻿using BuildingBlocks.Infrastructure.Data;
 using BuildingBlocks.Messaging.Persistence;
 using Cart.Domain.Entities;
 using Microsoft.EntityFrameworkCore;

@@ -4,7 +4,7 @@ namespace BuildingBlocks.Core.Contracts;
 /// An abstraction for getting the current date and time.
 /// This makes code that depends on time more testable.
 /// </summary>
-public interface IDateTime
+public interface IDateTimeProvider
 {
     DateTime Now { get; }
     DateTime UtcNow { get; }

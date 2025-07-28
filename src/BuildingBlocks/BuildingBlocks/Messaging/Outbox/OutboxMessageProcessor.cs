@@ -1,4 +1,3 @@
-using BuildingBlocks.Application.Data;
 using BuildingBlocks.Messaging.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -7,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 using System.Reflection;
+using BuildingBlocks.Infrastructure.Data;
 
 namespace BuildingBlocks.Messaging.Outbox
 {

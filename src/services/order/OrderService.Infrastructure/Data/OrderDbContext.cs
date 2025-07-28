@@ -1,4 +1,4 @@
-﻿using BuildingBlocks.Application.Data;
+﻿using BuildingBlocks.Infrastructure.Data;
 using BuildingBlocks.Messaging.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Migrations;

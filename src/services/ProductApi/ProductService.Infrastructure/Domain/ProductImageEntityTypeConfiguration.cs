@@ -17,7 +17,7 @@ public class ProductImageEntityTypeConfiguration : BaseEntityTypeConfiguration<P
         builder.Property(pi => pi.DisplayOrder).IsRequired();
 
         builder.HasOne(pi => pi.Product)
-            .WithMany(p => p.Images)
+            .WithMany(p => p.ProductImages)
             .HasForeignKey(pi => pi.ProductId)
             .IsRequired();
     }

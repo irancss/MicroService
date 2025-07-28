@@ -5,15 +5,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using BuildingBlocks.Application.CQRS.DomainEvents;
 using BuildingBlocks.Messaging.Abstractions;
 
 namespace ProductService.Application.DomainEventHandlers
 {
-    public class ProductPriceUpdatedHandler : IDomainEventHandler<ProductPriceUpdatedDomainEvent>
+    public class ProductPriceUpdatedHandler : DomainNotificationBase<ProductPriceUpdatedDomainEvent>
     {
         private readonly IEventBus _eventBus;
 
-        public ProductPriceUpdatedHandler(IEventBus eventBus)
+        public ProductPriceUpdatedHandler(ProductPriceUpdatedDomainEvent domainEvent, IEventBus eventBus) : base(domainEvent)
         {
             _eventBus = eventBus;
         }

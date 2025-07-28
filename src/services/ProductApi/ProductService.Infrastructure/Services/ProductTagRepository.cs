@@ -14,13 +14,13 @@ public class ProductTagRepository : IProductTagRepository
         _context = context;
     }
 
-    public async Task<ProductTag> GetAsync(string productId, string tagId)
+    public async Task<ProductTag> GetAsync(Guid productId, Guid tagId)
     {
         return await _context.ProductTags
             .FirstOrDefaultAsync(pt => pt.ProductId == productId && pt.TagId == tagId);
     }
 
-    public async Task<IEnumerable<ProductTag>> GetByProductIdAsync(string productId)
+    public async Task<IEnumerable<ProductTag>> GetByProductIdAsync(Guid productId)
     {
         return await _context.ProductTags
             .Where(pt => pt.ProductId == productId)
@@ -28,7 +28,7 @@ public class ProductTagRepository : IProductTagRepository
             .ToListAsync();
     }
 
-    public async Task<IEnumerable<ProductTag>> GetByTagIdAsync(string tagId)
+    public async Task<IEnumerable<ProductTag>> GetByTagIdAsync(Guid tagId)
     {
         return await _context.ProductTags
             .Where(pt => pt.TagId == tagId)
@@ -51,7 +51,7 @@ public class ProductTagRepository : IProductTagRepository
         await _context.SaveChangesAsync();
     }
 
-    public async Task DeleteAsync(string productId, string tagId)
+    public async Task DeleteAsync(Guid productId, Guid tagId)
     {
         var productTag = await _context.ProductTags
             .FirstOrDefaultAsync(pt => pt.ProductId == productId && pt.TagId == tagId);

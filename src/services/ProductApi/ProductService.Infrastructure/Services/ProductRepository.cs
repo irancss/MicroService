@@ -3,6 +3,11 @@ using ProductService.Domain.Interfaces;
 using ProductService.Domain.Models;
 using ProductService.Infrastructure.Data;
 using System.Linq;
+using System.Linq.Expressions;
+using BuildingBlocks.Common;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Query;
+using ProductService.Domain.ValueObjects;
 
 namespace ProductService.Infrastructure.Services
 {
@@ -65,7 +70,7 @@ namespace ProductService.Infrastructure.Services
             }
         }
 
-        public async Task DeleteProductsAsync(IEnumerable<string> ids, CancellationToken cancellationToken = default)
+        public async Task DeleteProductsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default)
         {
             var productsToDelete = await _context.Products
                 .Where(p => ids.Contains(p.Id))
@@ -78,7 +83,7 @@ namespace ProductService.Infrastructure.Services
             }
         }
 
-        public async Task<bool> ProductExistsAsync(string id, CancellationToken cancellationToken = default)
+        public async Task<bool> ProductExistsAsync(Guid id, CancellationToken cancellationToken = default)
         {
             return await _context.Products.AnyAsync(p => p.Id == id, cancellationToken);
         }
@@ -137,6 +142,83 @@ namespace ProductService.Infrastructure.Services
         {
             // FIXME: Product class does not have CategoryId. Category filtering is disabled. The 'categoryId' parameter is currently unused.
             return await _context.Products.CountAsync(cancellationToken); // Original: .CountAsync(p => p.CategoryId == categoryId, cancellationToken);
+        }
+
+        public async Task<Product> SingleOrDefaultAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Product> SingleOrDefaultAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Product> SingleOrDefaultAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include, bool enableTracking)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Product> SingleOrDefaultAsync(Expression<Func<Product, bool>> predicate = null, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy = null, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include = null,
+            bool enableTracking = true, bool ignoreQueryFilters = false)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPaginate<Product>> GetListAsync(Expression<Func<Product, bool>> predicate)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPaginate<Product>> GetListAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPaginate<Product>> GetListAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPaginate<Product>> GetListAsync(Expression<Func<Product, bool>> predicate, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include, int index, int size)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IPaginate<Product>> GetListAsync(Expression<Func<Product, bool>> predicate = null, Func<IQueryable<Product>, IOrderedQueryable<Product>> orderBy = null, Func<IQueryable<Product>, IIncludableQueryable<Product, object>> include = null, int index = 0, int size = 20,
+            bool enableTracking = true, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async ValueTask<EntityEntry<Product>> InsertAsync(Product entity, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task InsertAsync(params Product[] entities)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task InsertAsync(IEnumerable<Product> entities, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Product?> GetByIdWithDetailsAsync(Guid productId, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<bool> IsSkuUniqueAsync(Sku sku, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<Product?> GetByIdAsync(Guid productId)
+        {
+            throw new NotImplementedException();
         }
     }
 }

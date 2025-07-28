@@ -14,7 +14,7 @@ namespace ProductService.Infrastructure.Persistence
             _context = context;
             _logger = logger;
         }
-        public void Initialise()
+        public async Task InitialiseAsync()
         {
             try
             {

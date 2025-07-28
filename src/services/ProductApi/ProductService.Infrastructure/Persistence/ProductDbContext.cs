@@ -1,6 +1,7 @@
 ﻿using BuildingBlocks.Infrastructure.Data;
 using BuildingBlocks.Messaging.Persistence;
 using Microsoft.EntityFrameworkCore;
+using ProductService.Domain.Interfaces;
 using ProductService.Domain.Models;
 using ProductService.Infrastructure.Domain;
 
@@ -13,7 +14,13 @@ namespace ProductService.Infrastructure.Data
         public DbSet<Product> Products => Set<Product>();
         public DbSet<Category> Categories => Set<Category>();
         public DbSet<Brand> Brands => Set<Brand>();
+        public DbSet<Question> Questions => Set<Question>();
+        public DbSet<ProductSpecification> ProductSpecifications => Set<ProductSpecification>();
         public DbSet<ProductCategory> ProductCategories => Set<ProductCategory>();
+        public DbSet<ProductVariantStock> ProductVariantStocks => Set<ProductVariantStock>();
+        public DbSet<ProductImage> ProductImages => Set<ProductImage>();
+        public DbSet<ProductAttribute> ProductAttributes => Set<ProductAttribute>();
+        public DbSet<Answer> Answers => Set<Answer>();
         public DbSet<ProductTag> ProductTags => Set<ProductTag>();
         public DbSet<Tag> Tags => Set<Tag>();
 
@@ -40,7 +47,7 @@ namespace ProductService.Infrastructure.Data
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductImageEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductSpecificationEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductTagEntityTypeConfiguration).Assembly);
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductVariantEntityTypeConfiguration).Assembly);
+            //modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductVariantEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductVariantImageEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductVariantPriceEntityTypeConfiguration).Assembly);
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(ProductVariantStockEntityTypeConfiguration).Assembly);

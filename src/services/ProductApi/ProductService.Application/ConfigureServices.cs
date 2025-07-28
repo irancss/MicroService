@@ -13,19 +13,17 @@ namespace ProductService.Application
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            
-            services.AddScoped<IBrandService , BrandService>();
+            services.AddScoped<IBrandService, BrandService>();
             //services.AddScoped<IProductService, ProductService>();
-            services.AddScoped<IAnswerService , AnswerService>();
+            services.AddScoped<IAnswerService, AnswerService>();
             services.AddScoped<IBrandService, BrandService>();
 
-            //services.AddAutoMapper(Assembly.GetExecutingAssembly());
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            // Corrected AutoMapper registration
+            services.AddAutoMapper(cfg => cfg.AddMaps(Assembly.GetExecutingAssembly()));
 
             // Register MediatR services
             services.AddMediatR(Assembly.GetExecutingAssembly());
 
-            
             return services;
         }
         public class AssemblyReference { }

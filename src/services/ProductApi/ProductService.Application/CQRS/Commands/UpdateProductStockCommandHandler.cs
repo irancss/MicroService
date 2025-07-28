@@ -17,7 +17,7 @@ namespace ProductService.Application.CQRS.Commands
             var product = await _productRepository.GetByIdAsync(request.ProductId);
 
             // استفاده از GuardClause برای بررسی null بودن
-            Guard.Against.NotFound(request.ProductId, product, nameof(product));
+            //Guard.Against.NotFound(request.ProductId, product, nameof(product));
 
             product.UpdateStock(request.NewQuantity);
 

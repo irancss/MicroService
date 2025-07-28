@@ -7,7 +7,7 @@ namespace ProductService.Domain.Models;
 /// Defines an attribute type, e.g., "Color", "Size", "Material".
 /// These attributes can be used to define product variants or as descriptive properties.
 /// </summary>
-public class ProductAttribute : AuditableEntity
+public class ProductAttribute : AuditableEntity<Guid>
 {
     public string Name { get; set; } = string.Empty; // e.g., "Color", "Size"
     public string? Description { get; set; }

@@ -1,36 +1,21 @@
-﻿using BuildingBlocks.Infrastructure.Configurations;
+﻿using BuildingBlocks.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using ProductService.Domain.Models;
-using ProductService.Infrastructure.Domain;
 
 namespace ProductService.Infrastructure.Domain;
 
-public class ProductVariantEntityTypeConfiguration : BaseEntityTypeConfiguration<ProductVariant>
+public abstract class BaseEntityTypeConfiguration<T> : IEntityTypeConfiguration<T> where T : AuditableEntity<Guid>
 {
-    public override void Configure(EntityTypeBuilder<ProductVariant> builder)
+    public virtual void Configure(EntityTypeBuilder<T> builder)
     {
-        base.Configure(builder);
+        builder.HasKey(e => e.Id);
+        // نکته: اگر Id را در کد C# تولید می‌کنی (مثلاً با Guid.NewGuid()) بهتر است خط زیر را حذف کنی
+        // چون ValueGeneratedOnAdd بیشتر برای Id های عددی (int, long) یا Guid های دیتابیسی (newsequentialid) است.
+        // builder.Property(e => e.Id).ValueGeneratedOnAdd(); 
 
-        builder.Property(pv => pv.Sku).IsRequired().HasMaxLength(100);
-        builder.HasIndex(pv => pv.Sku).IsUnique();
-        builder.Property(pv => pv.Name).HasMaxLength(255);
-        builder.Property(pv => pv.PriceModifier).HasColumnType("decimal(18,2)");
-
-        builder.HasOne(pv => pv.Product)
-            .WithMany(p => p.Variants)
-            .HasForeignKey(pv => pv.ProductId)
-            .IsRequired();
-
-        builder.HasMany(pv => pv.Prices)
-            .WithOne(pvp => pvp.ProductVariant)
-            .HasForeignKey(pvp => pvp.ProductVariantId)
-            .OnDelete(DeleteBehavior.Cascade);
-
-        // Uncomment if you want to configure Stock as one-to-one
-        // builder.HasOne(pv => pv.Stock)
-        //     .WithOne(pvs => pvs.ProductVariant)
-        //     .HasForeignKey<ProductVariantStock>(pvs => pvs.ProductVariantId)
-        //     .OnDelete(DeleteBehavior.Cascade);
+        builder.ToTable(typeof(T).Name + "s");
+        builder.Property(e => e.CreatedAt).IsRequired();
+        builder.Property(e => e.IsDeleted).IsRequired().HasDefaultValue(false);
+        builder.HasQueryFilter(e => !e.IsDeleted);
     }
 }

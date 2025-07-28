@@ -4,10 +4,10 @@ namespace ProductService.Domain.Interfaces;
 
 public interface IProductTagRepository
 {
-    Task<ProductTag> GetAsync(string productId, string tagId);
-    Task<IEnumerable<ProductTag>> GetByProductIdAsync(string productId);
-    Task<IEnumerable<ProductTag>> GetByTagIdAsync(string tagId);
+    Task<ProductTag> GetAsync(Guid productId, Guid tagId);
+    Task<IEnumerable<ProductTag>> GetByProductIdAsync(Guid productId);
+    Task<IEnumerable<ProductTag>> GetByTagIdAsync(Guid tagId);
     Task AddAsync(ProductTag productTag);
     Task UpdateAsync(ProductTag productTag); // If ProductTag has properties beyond keys
-    Task DeleteAsync(string productId, string tagId);
+    Task DeleteAsync(Guid productId, Guid tagId);
 }

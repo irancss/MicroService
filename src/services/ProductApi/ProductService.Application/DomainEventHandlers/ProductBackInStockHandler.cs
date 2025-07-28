@@ -1,14 +1,20 @@
-﻿using ProductService.Domain.Events;
+﻿using BuildingBlocks.Application.CQRS.DomainEvents;
+using ProductService.Domain.Events;
 using BuildingBlocks.Messaging.Abstractions;
 
 namespace ProductService.Application.DomainEventHandlers
 {
     // این Handler به رویداد دامنه گوش می‌دهد
-    public class ProductBackInStockHandler : IDomainEventHandler<ProductBackInStockDomainEvent>
+    public class ProductBackInStockHandler : DomainNotificationBase<ProductBackInStockDomainEvent>
     {
         private readonly IEventBus _eventBus;
 
-        public ProductBackInStockHandler(IEventBus eventBus)
+        //public ProductBackInStockHandler(IEventBus eventBus)
+        //{
+        //    _eventBus = eventBus;
+        //}
+
+        public ProductBackInStockHandler(ProductBackInStockDomainEvent domainEvent, IEventBus eventBus) : base(domainEvent)
         {
             _eventBus = eventBus;
         }

@@ -7,7 +7,7 @@ namespace ProductService.Application.DTOs.Brand
 
     public class BrandDto : IMapFrom<Domain.Models.Brand>
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string Name { get; set; } = string.Empty;
         public string? Slug { get; set; } // URL-friendly identifier
         public string? Description { get; set; }

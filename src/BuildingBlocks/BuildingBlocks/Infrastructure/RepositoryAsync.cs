@@ -9,7 +9,7 @@ namespace BuildingBlocks.Infrastructure
 {
     public class RepositoryAsync<T> : IRepositoryAsync<T> where T : class
     {
-        private readonly DbSet<T> _dbSet;
+        protected readonly DbSet<T> _dbSet;
 
         public RepositoryAsync(DbContext dbContext)
         {

@@ -14,7 +14,7 @@ namespace ProductService.Infrastructure.Domain
             builder.Property(b => b.Name).IsRequired().HasMaxLength(100);
             builder.HasIndex(b => b.Name).IsUnique();
             builder.Property(b => b.Description).HasMaxLength(500);
-            builder.Property(b => b.LogoUrl).HasMaxLength(500);
+            //builder.Property(b => b.LogoUrl).HasMaxLength(500);
         }
     }
 }

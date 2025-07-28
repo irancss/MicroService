@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ProductService.API.Controllers.Product;
 
 namespace ProductService.API.Controllers.Review
 {

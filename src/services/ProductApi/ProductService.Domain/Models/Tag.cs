@@ -2,7 +2,7 @@
 
 namespace ProductService.Domain.Models
 {
-    public class Tag : AuditableEntity
+    public class Tag : AuditableEntity<Guid>
     {
         public string Name { get; set; }
         public string Description { get; set; }

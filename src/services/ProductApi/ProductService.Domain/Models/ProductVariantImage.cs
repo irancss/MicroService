@@ -3,7 +3,7 @@
 
 namespace ProductService.Domain.Models;
 
-public class ProductVariantImage : AuditableEntity
+public class ProductVariantImage : AuditableEntity<Guid>
 {
     public string ProductVariantId { get; set; }
     public virtual ProductVariant ProductVariant { get; set; } = null!;

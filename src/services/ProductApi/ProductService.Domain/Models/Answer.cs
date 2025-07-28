@@ -1,6 +1,6 @@
 ﻿using BuildingBlocks.Domain.Entities;
 
-public class Answer : AuditableEntity
+public class Answer : AuditableEntity<Guid>
 {
 
     public string QuestionId { get; set; } // شناسه سوالی که این پاسخ به آن تعلق دارد
@@ -19,7 +19,7 @@ public class Answer : AuditableEntity
     // Constructor to initialize required properties and set defaults
     public Answer(string questionId, string userId, string answerText, bool isAdminAnswer = false)
     {
-        Id = Guid.NewGuid().ToString();
+        Id = Guid.NewGuid();
         QuestionId = questionId ?? throw new ArgumentNullException(nameof(questionId));
         UserId = userId ?? throw new ArgumentNullException(nameof(userId));
         AnswerText = answerText ?? throw new ArgumentNullException(nameof(answerText));
@@ -30,7 +30,7 @@ public class Answer : AuditableEntity
     // Parameterless constructor for frameworks like EF Core
     private Answer()
     {
-        Id = Guid.NewGuid().ToString();
+        Id = Guid.NewGuid();
         CreatedAt = DateTime.UtcNow;
         // Required properties will be set by the ORM or through property initializers
         QuestionId = string.Empty; // Or null if your ORM handles it

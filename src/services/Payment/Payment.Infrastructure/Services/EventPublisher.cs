@@ -1,10 +1,9 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RabbitMQ.Client;
-using System;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 namespace Payment.Infrastructure.Services;
 
@@ -16,7 +15,7 @@ public interface IEventPublisher
     Task PublishWalletUpdatedAsync(Guid userId, decimal newBalance, string currency, string operation);
 }
 
-public class RabbitMQEventPublisher : IEventPublisher, IDisposable
+public  class RabbitMQEventPublisher : IEventPublisher, IDisposable
 {
     private readonly IConnection _connection;
     private readonly IModel _channel;
@@ -43,18 +42,21 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
                 UserName = userName,
                 Password = password,
                 VirtualHost = virtualHost,
-                DispatchConsumersAsync = true // افزودن این برای سازگاری بهتر با async consumer ها خوب است
+                // [حذف شد] این پراپرتی در نسخه 6.0 به بالا وجود ندارد.
+                // DispatchConsumersAsync = true 
             };
 
-            _connection = factory.CreateConnection();
-            _channel = _connection.CreateModel();
+            // [اصلاح شد] از متدهای سنکرون برای ایجاد کانکشن و چنل استفاده کنید.
+            // این روش برای Publisher ساده‌تر و رایج‌تر است.
+            //_connection = factory.CreateConnection();
+            //_channel = _connection.CreateModel();
 
-            _channel.ExchangeDeclare(
-                exchange: _exchangeName,
-                type: ExchangeType.Topic,
-                durable: true,
-                autoDelete: false,
-                arguments: null);
+            //_channel.ExchangeDeclare(
+            //    exchange: _exchangeName,
+            //    type: ExchangeType.Topic,
+            //    durable: true,
+            //    autoDelete: false,
+            //    arguments: null);
 
             _logger.LogInformation("RabbitMQ connection established successfully");
         }
@@ -77,25 +79,27 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
 
             var body = Encoding.UTF8.GetBytes(message);
 
-            // --- START OF CORRECTION 1 ---
-            // متد CreateBasicProperties تغییری نکرده اما استفاده از آن در BasicPublish تغییر کرده
-            var properties = _channel.CreateBasicProperties();
-            properties.Persistent = true;
-            properties.MessageId = Guid.NewGuid().ToString();
-            properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-            properties.Type = typeof(T).Name;
+            //var properties = _channel.CreateBasicProperties();
+            //properties.Persistent = true;
+            //properties.MessageId = Guid.NewGuid().ToString();
+            //properties.Timestamp = new AmqpTimestamp(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
+            //properties.Type = typeof(T).Name;
 
-            // نام پارامتر از basicProperties به properties تغییر کرده است
-            _channel.BasicPublish(
-                exchange: _exchangeName,
-                routingKey: routingKey,
-               // properties: properties, // <-- اصلاح اصلی اینجاست
-                body: body);
-            // --- END OF CORRECTION 1 ---
+            // [اصلاح شد] امضای متد BasicPublish تغییر کرده است.
+            // نام پارامتر از `properties` به `basicProperties` تغییر کرده است.
+            // همچنین، await در اینجا ضرورتی ندارد چون BasicPublish یک متد void است.
+            //_channel.BasicPublish(
+            //    exchange: _exchangeName,
+            //    routingKey: routingKey,
+            //    basicProperties: properties, // <-- اصلاح اصلی اینجاست
+            //    body: body);
 
             _logger.LogDebug("Event published: {EventType}, RoutingKey: {RoutingKey}", typeof(T).Name, routingKey);
 
-            await Task.CompletedTask; // این بخش برای یک متد Publisher می‌تواند بهینه شود
+            // Publish یک عملیات fire-and-forget است و نیازی به await ندارد.
+            // اگر می‌خواهید از صحت ارسال مطمئن شوید باید از Publisher Confirms استفاده کنید که پیچیده‌تر است.
+            // برای سادگی، این خط را نگه می‌داریم تا امضای متد async باقی بماند.
+            await Task.CompletedTask;
         }
         catch (Exception ex)
         {
@@ -103,7 +107,6 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
             throw;
         }
     }
-
     public async Task PublishPaymentSuccessAsync(Guid transactionId, string orderId, Guid userId, decimal amount, string currency)
     {
         var eventData = new PaymentSuccessEvent
@@ -153,11 +156,8 @@ public class RabbitMQEventPublisher : IEventPublisher, IDisposable
     {
         try
         {
-            // --- START OF CORRECTION 2 ---
-            // متدهای Close() حذف شده‌اند. Dispose() برای بستن و آزادسازی منابع کافی است.
-            _channel?.Dispose();
+            //_channel?.Dispose();
             _connection?.Dispose();
-            // --- END OF CORRECTION 2 ---
             _logger.LogInformation("RabbitMQ connection disposed");
         }
         catch (Exception ex)

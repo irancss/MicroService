@@ -5,7 +5,7 @@ using BuildingBlocks.Domain.Entities;
 // Assuming a namespace based on the file path
 namespace ProductService.Domain.Models
 {
-    public class Review : AuditableEntity
+    public class Review : AuditableEntity<Guid>
     {
 
         public string Title { get; set; }
@@ -46,7 +46,7 @@ namespace ProductService.Domain.Models
         // Constructor for creating a new review
         public Review(string productId, string userId, int rating, string comment)
         {
-            Id = Guid.NewGuid().ToString(); // Generate a new unique ID
+            Id = Guid.NewGuid(); // Generate a new unique ID
             ProductId = productId;
             UserId = userId;
             Rating = rating;

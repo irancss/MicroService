@@ -2,7 +2,7 @@
 {
     public class AnswerDto 
     {
-        public string Id { get; set; }
+        public Guid Id { get; set; }
         public string QuestionId { get; set; } 
         public string UserId { get; set; } 
         public string AnswerText { get; set; }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
 using ProductService.Domain.Interfaces;
 using ProductService.Infrastructure.Data;
 using ProductService.Infrastructure.Persistence;

@@ -21,7 +21,7 @@ builder.Host.AddSerilogLogging();
 builder.Services.AddObservability(builder.Configuration);
 
 // 3. Add BuildingBlocks and Core Services
-builder.Services.AddSharedKernel(builder.Configuration, typeof(ProductService.Application.AssemblyReference).Assembly);
+//builder.Services.AddSharedKernel(builder.Configuration, typeof(ProductService.Application.AssemblyReference).Assembly);
 
 // 4. Add Infrastructure Layer (DbContext, Repositories, etc.)
 builder.Services.AddInfrastructureServices(builder.Configuration);
@@ -34,7 +34,7 @@ builder.Services.AddConsulServiceDiscovery(builder.Configuration);
 builder.Services.AddServiceMeshHttpClient(builder.Configuration);
 
 // 7. Event-Driven Messaging with MassTransit and Outbox
-builder.Services.AddEventDrivenMessaging(builder.Configuration, typeof(ProductService.Application.AssemblyReference).Assembly);
+//builder.Services.AddEventDrivenMessaging(builder.Configuration, typeof(ProductService.Application.AssemblyReference).Assembly);
 builder.Services.AddOutboxMessageProcessor(builder.Configuration);
 
 // 8. Resiliency Policies
@@ -83,3 +83,4 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+

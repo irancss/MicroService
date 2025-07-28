@@ -25,7 +25,7 @@ public class ProductVariantStockRepository : IProductVariantStock // Renamed cla
             .FirstOrDefaultAsync(pvs => pvs.ProductVariantId == productVariantId);
     }
 
-    public async Task<IEnumerable<ProductVariantStock>> GetStockByProductIdAsync(string productId)
+    public async Task<IEnumerable<ProductVariantStock>> GetStockByProductIdAsync(Guid productId)
     {
         // This assumes ProductVariantStock has a navigation property or direct/indirect link to ProductId.
         // If ProductVariantStock is linked via ProductVariant, which is linked to Product:

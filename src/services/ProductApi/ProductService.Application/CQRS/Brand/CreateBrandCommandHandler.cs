@@ -19,13 +19,14 @@ namespace ProductService.Application.CQRS.Brand
 
         public async Task<Guid> Handle(CreateBrandCommand request, CancellationToken cancellationToken)
         {
-            var brand = Brand.Create(request.Name, request.Description);
+            //var brand = Brand.Create(request.Name, request.Description);
 
-            await _brandRepository.AddAsync(brand);
+            //await _brandRepository.AddAsync(brand);
 
-            // SaveChangesAsync توسط TransactionBehavior به صورت خودکار فراخوانی می‌شود.
+            //// SaveChangesAsync توسط TransactionBehavior به صورت خودکار فراخوانی می‌شود.
 
-            return brand.Id;
+            //return brand.Id;
+            return Guid.Empty;
         }
     }
 }

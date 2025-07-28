@@ -1,7 +1,7 @@
 
 using BuildingBlocks.Domain.Entities;
 
-public class ProductComment : AuditableEntity
+public class ProductComment : AuditableEntity<Guid>
 {
     public string ProductId { get; set; }
     public string UserId { get; set; }

@@ -2,7 +2,7 @@
 
 namespace ProductService.Domain.Models;
 
-public class ProductSpecification : AuditableEntity
+public class ProductSpecification : AuditableEntity<Guid>
 {
     public virtual Product Product { get; set; } = null!;
 

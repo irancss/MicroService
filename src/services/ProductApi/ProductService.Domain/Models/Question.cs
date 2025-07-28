@@ -4,7 +4,7 @@ using ProductService.Domain.Models;
 using System.ComponentModel.DataAnnotations.Schema;
 using BuildingBlocks.Domain.Entities;
 
-public class Question : AuditableEntity
+public class Question : AuditableEntity<Guid>
 {
     // شناسه سوال، به طور پیش فرض با یک GUID جدید مقداردهی اولیه می شود
 
@@ -50,7 +50,7 @@ public class Question : AuditableEntity
         this.UpdatedAt = DateTime.UtcNow;
     }
 
-    public void RemoveAnswer(string answerId)
+    public void RemoveAnswer(Guid answerId)
     {
         // لیست Answers تضمین شده است که null نباشد
         var answer = this.Answers.FirstOrDefault(a => a.Id == answerId);

@@ -2,7 +2,7 @@
 
 namespace ProductService.Domain.Models;
 
-public class Category : AuditableEntity
+public class Category : AuditableEntity<Guid>
 {
     public string Name { get; set; } = string.Empty;
     public string? Slug { get; set; } // URL-friendly identifier

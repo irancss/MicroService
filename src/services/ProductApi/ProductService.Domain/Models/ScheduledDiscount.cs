@@ -2,7 +2,7 @@
 using BuildingBlocks.Domain.Entities;
 using ProductService.Domain.Models;
 
-public class ScheduledDiscount : AuditableEntity
+public class ScheduledDiscount : AuditableEntity<Guid>
 {
     // Added an Id property, common for entities.
     public string Name { get; set; }
@@ -19,6 +19,11 @@ public class ScheduledDiscount : AuditableEntity
     public bool IsActive { get; set; }
 
     public decimal? FixedAmount { get; set; }
+    public virtual ICollection<ScheduledDiscount> ScheduledDiscounts { get; private set; } = new List<ScheduledDiscount>();
+    public virtual ICollection<Question> Questions { get; private set; } = new List<Question>();
+    public virtual ICollection<ProductSpecification> Specifications { get; private set; } = new List<ProductSpecification>();
+    public virtual ICollection<ProductDescriptiveAttribute> DescriptiveAttributes { get; private set; } = new List<ProductDescriptiveAttribute>();
+    public virtual ICollection<Review> Reviews { get; private set; } = new List<Review>();
 
     public string ProductId { get; set; }
     public Product Product { get; set; }

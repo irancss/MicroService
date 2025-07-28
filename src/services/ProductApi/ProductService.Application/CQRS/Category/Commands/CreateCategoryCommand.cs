@@ -1,7 +1,7 @@
 
 using MediatR;
 
-public class CreateCategoryCommand : IRequest<string>
+public class CreateCategoryCommand : IRequest<Guid>
 {
     public string Name { get; set; }
     public string Slug { get; set; }
@@ -10,7 +10,7 @@ public class CreateCategoryCommand : IRequest<string>
     public int DisplayOrder { get; set; }
 }
 
-public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, string>
+public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, Guid>
 {
     private readonly ICategoryService _categoryService;
 
@@ -19,7 +19,7 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
         _categoryService = categoryService;
     }
 
-    public async Task<string> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
+    public async Task<Guid> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
         var categoryDto = new CategoryDto
         {

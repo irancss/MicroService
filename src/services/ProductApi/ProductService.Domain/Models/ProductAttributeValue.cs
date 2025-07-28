@@ -8,7 +8,7 @@ namespace ProductService.Domain.Models;
 /// e.g., For ProductAttribute "Color", a ProductAttributeValue could be "Red".
 /// These values are then selected to define ProductVariants.
 /// </summary>
-public class ProductAttributeValue : AuditableEntity
+public class ProductAttributeValue : AuditableEntity<Guid>
 {
     public string ProductAttributeId { get; set; } // Foreign key to ProductAttribute (e.g., "Color")
 

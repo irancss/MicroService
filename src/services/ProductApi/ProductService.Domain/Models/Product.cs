@@ -1,9 +1,6 @@
 ﻿using Ardalis.GuardClauses;
-using BuildingBlocks.Domain.Entities;
-using BuildingBlocks.Domain.Events;
 using ProductService.Domain.Events;
 using ProductService.Domain.ValueObjects;
-using System;
 
 namespace ProductService.Domain.Models // Or ProductService.Domain.Models
 {
@@ -21,11 +18,15 @@ namespace ProductService.Domain.Models // Or ProductService.Domain.Models
         public Guid? BrandId { get; private set; }
         public Brand? Brand { get; private set; }
 
-        private readonly List<ProductCategory> _productCategories = new();
-        public IReadOnlyCollection<ProductCategory> ProductCategories => _productCategories.AsReadOnly();
-
-        private readonly List<ProductTag> _productTags = new();
-        public IReadOnlyCollection<ProductTag> ProductTags => _productTags.AsReadOnly();
+        public virtual ICollection<ScheduledDiscount> ScheduledDiscounts { get; private set; } = new List<ScheduledDiscount>();
+        public virtual ICollection<Review> Reviews { get; private set; } = new List<Review>();
+        public virtual ICollection<ProductImage> ProductImages { get; private set; } = new List<ProductImage>();
+        public virtual ICollection<Question> Questions { get; private set; } = new List<Question>();
+        public virtual ICollection<ProductSpecification> Specifications { get; private set; } = new List<ProductSpecification>();
+        public virtual ICollection<ProductTag> ProductTags { get; private set; } = new List<ProductTag>();
+        public virtual ICollection<ProductCategory> ProductCategories { get; private set; } = new List<ProductCategory>();
+        public virtual ICollection<ProductDescriptiveAttribute> DescriptiveAttributes { get; private set; } = new List<ProductDescriptiveAttribute>();
+        public virtual ICollection<ProductBrand> ProductBrands { get; private set; } = new List<ProductBrand>();
 
         // سازنده برای EF Core
         private Product() { }
@@ -97,19 +98,19 @@ namespace ProductService.Domain.Models // Or ProductService.Domain.Models
         public void AddCategory(Guid categoryId)
         {
             Guard.Against.Default(categoryId, nameof(categoryId));
-            if (!_productCategories.Any(pc => pc.CategoryId == categoryId))
-            {
-                _productCategories.Add(new ProductCategory(this.Id, categoryId));
-            }
+            //if (!_productCategories.Any(pc => pc.CategoryId == categoryId))
+            //{
+            //    _productCategories.Add(new ProductCategory(this.Id, categoryId));
+            //}
         }
 
         public void RemoveCategory(Guid categoryId)
         {
-            var productCategory = _productCategories.FirstOrDefault(pc => pc.CategoryId == categoryId);
-            if (productCategory != null)
-            {
-                _productCategories.Remove(productCategory);
-            }
+            //var productCategory = _productCategories.FirstOrDefault(pc => pc.CategoryId == categoryId);
+            //if (productCategory != null)
+            //{
+            //    _productCategories.Remove(productCategory);
+            //}
         }
         public void UpdatePrice(ProductPrice newPrice)
         {
@@ -125,9 +126,9 @@ namespace ProductService.Domain.Models // Or ProductService.Domain.Models
 
         public void SetTags(IEnumerable<Guid> tagIds)
         {
-            _productTags.Clear();
-            var tagsToAdd = tagIds.Distinct().Select(tagId => new ProductTag(this.Id, tagId));
-            _productTags.AddRange(tagsToAdd);
+            //_productTags.Clear();
+            //var tagsToAdd = tagIds.Distinct().Select(tagId => new ProductTag(this.Id, tagId));
+            //_productTags.AddRange(tagsToAdd);
         }
     }
 }

@@ -3,7 +3,7 @@ using BuildingBlocks.Domain.Entities;
 
 namespace ProductService.Domain.Models;
 
-public class ProductImage : AuditableEntity
+public class ProductImage : AuditableEntity<Guid>
 {
     public string ProductId { get; set; } // Image for the base product
     public virtual Product Product { get; set; } = null!;

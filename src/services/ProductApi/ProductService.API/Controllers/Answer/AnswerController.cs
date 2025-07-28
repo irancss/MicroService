@@ -115,7 +115,7 @@ namespace ProductService.API.Controllers.Answer
         [ProducesResponseType(typeof(ProblemDetails), (int)HttpStatusCode.NotFound)]
         public async Task<IActionResult> UpdateAnswer(string questionId, string answerId, [FromBody] AnswerDto request)
         {
-            if (answerId != request.Id) // Assuming UpdateAnswerRequestDto has an Id property
+            if (answerId != request.Id.ToString()) // Assuming UpdateAnswerRequestDto has an Id property
             {
                 _logger.LogWarning("Mismatched Answer ID in URL ({UrlAnswerId}) and body ({BodyAnswerId}) for UpdateAnswer request.", answerId, request.Id);
                 return BadRequest(new ProblemDetails { Title = "Mismatched answer ID in URL and body." });

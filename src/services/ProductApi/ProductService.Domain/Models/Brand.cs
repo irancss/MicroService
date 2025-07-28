@@ -4,7 +4,7 @@ using System;
 
 namespace ProductService.Domain.Models
 {
-    public class Brand : AggregateRoot // ارث‌بری از AggregateRoot برای قابلیت‌های پایه
+    public class Brand : AuditableEntity<Guid> // ارث‌بری از AggregateRoot برای قابلیت‌های پایه
     {
         public string Name { get; private set; }
         public string? Description { get; private set; }
@@ -12,6 +12,8 @@ namespace ProductService.Domain.Models
 
         // سازنده برای EF Core
         private Brand() { Name = string.Empty; }
+
+        public ICollection<ProductBrand> ProductBrands { get; set; }
 
         public static Brand Create(string name, string? description)
         {

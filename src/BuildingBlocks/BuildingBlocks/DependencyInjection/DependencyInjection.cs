@@ -43,6 +43,7 @@ public static class DependencyInjection
 
         // Interceptors
         services.AddScoped<AuditableEntitySaveChangesInterceptor>();
+        services.AddSingleton<DomainEventDispatchingInterceptor>(); 
 
         return services;
     }
